@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getToken } from '@/utils/auth'
+import { useUserStore } from '@/store'
 
 const routes = [
   {
@@ -82,15 +83,32 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+let hasFetchedUserInfo = false
+
+router.beforeEach(async (to, from, next) => {
   const token = getToken()
   if (to.path === '/login') {
-    next()
-  } else if (!token) {
-    next('/login')
-  } else {
-    next()
+    if (token) {
+      next('/')
+    } else {
+      next()
+    }
+    return
   }
+
+  if (!token) {
+    next('/login')
+    return
+  }
+
+  // Fetch user info on first navigation after page refresh
+  if (!hasFetchedUserInfo) {
+    const userStore = useUserStore()
+    await userStore.fetchUserInfo()
+    hasFetchedUserInfo = true
+  }
+
+  next()
 })
 
 export default router

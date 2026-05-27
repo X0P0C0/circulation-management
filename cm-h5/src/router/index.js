@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getToken } from '@/utils/auth'
+import { useUserStore } from '@/store'
 
 const routes = [
   { path: '/login', name: 'Login', component: () => import('@/views/login/index.vue'), meta: { hidden: true } },
@@ -22,9 +23,20 @@ const routes = [
 
 const router = createRouter({ history: createWebHistory(), routes })
 
-router.beforeEach((to, from, next) => {
-  if (to.path === '/login') return next()
-  if (!getToken()) return next('/login')
+let hasFetchedUserInfo = false
+
+router.beforeEach(async (to, from, next) => {
+  if (to.path === '/login') {
+    if (getToken()) next('/')
+    else next()
+    return
+  }
+  if (!getToken()) { next('/login'); return }
+  if (!hasFetchedUserInfo) {
+    const userStore = useUserStore()
+    await userStore.fetchUserInfo()
+    hasFetchedUserInfo = true
+  }
   next()
 })
 

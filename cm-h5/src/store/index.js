@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { login as loginApi } from '@/api/auth'
 import { getToken, setToken, removeToken } from '@/utils/auth'
+import request from '@/utils/request'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -15,6 +16,15 @@ export const useUserStore = defineStore('user', {
       this.username = data.username
       this.realName = data.realName
       setToken(data.token)
+    },
+    async fetchUserInfo() {
+      try {
+        const { data } = await request.get('/api/auth/info')
+        this.username = data.username
+        this.realName = data.realName || data.username
+      } catch (e) {
+        this.logout()
+      }
     },
     logout() {
       this.token = ''
