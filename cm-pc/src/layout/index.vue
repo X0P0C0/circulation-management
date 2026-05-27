@@ -2,8 +2,7 @@
   <div class="app-layout">
     <aside class="sidebar" :class="{ collapsed: isCollapsed }">
       <div class="sidebar-logo">
-        <img src="" alt="" style="display:none" />
-        <span v-show="!isCollapsed" class="logo-text">配件流转管理</span>
+        <span v-show="!isCollapsed" class="logo-text">CM System</span>
         <span v-show="isCollapsed" class="logo-text">CM</span>
       </div>
       <el-menu
@@ -30,7 +29,7 @@
             <Expand v-else />
           </el-icon>
           <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/' }">Home</el-breadcrumb-item>
             <el-breadcrumb-item v-if="currentRoute?.meta?.title">
               {{ currentRoute.meta.title }}
             </el-breadcrumb-item>
@@ -38,10 +37,17 @@
         </div>
         <div class="navbar-right">
           <span class="username">{{ userStore.realName || userStore.username }}</span>
-          <el-button link @click="handleLogout">
-            <el-icon><SwitchButton /></el-icon>
-            退出
-          </el-button>
+          <el-dropdown @command="handleCommand">
+            <el-button link>
+              <el-icon><Setting /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="password">Change Password</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>Logout</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </header>
 
@@ -53,14 +59,34 @@
         </router-view>
       </main>
     </div>
+
+    <!-- Change Password Dialog -->
+    <el-dialog v-model="pwdDialogVisible" title="Change Password" width="400px" :close-on-click-modal="false">
+      <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-width="120px">
+        <el-form-item label="Old Password" prop="oldPassword">
+          <el-input v-model="pwdForm.oldPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="New Password" prop="newPassword">
+          <el-input v-model="pwdForm.newPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="Confirm" prop="confirmPassword">
+          <el-input v-model="pwdForm.confirmPassword" type="password" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="pwdDialogVisible = false">Cancel</el-button>
+        <el-button type="primary" :loading="pwdLoading" @click="handleChangePassword">Confirm</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store'
-import { ElMessageBox } from 'element-plus'
+import { changePassword } from '@/api/auth'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -75,10 +101,67 @@ const menuRoutes = computed(() => {
   return mainRoute?.children?.filter(r => !r.meta?.hidden) || []
 })
 
+const handleCommand = (cmd) => {
+  if (cmd === 'logout') {
+    handleLogout()
+  } else if (cmd === 'password') {
+    openPasswordDialog()
+  }
+}
+
 const handleLogout = async () => {
-  await ElMessageBox.confirm('确认退出系统？', '提示', { type: 'warning' })
+  await ElMessageBox.confirm('Confirm logout?', 'Tip', { type: 'warning' })
   await userStore.logout()
   router.push('/login')
+}
+
+// Change password
+const pwdDialogVisible = ref(false)
+const pwdFormRef = ref()
+const pwdLoading = ref(false)
+const pwdForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
+
+const pwdRules = {
+  oldPassword: [{ required: true, message: 'Required', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: 'Required', trigger: 'blur' },
+    { min: 6, message: 'Min 6 chars', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: 'Required', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== pwdForm.newPassword) {
+          callback(new Error('Passwords do not match'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
+
+const openPasswordDialog = () => {
+  Object.assign(pwdForm, { oldPassword: '', newPassword: '', confirmPassword: '' })
+  pwdDialogVisible.value = true
+}
+
+const handleChangePassword = async () => {
+  await pwdFormRef.value.validate()
+  pwdLoading.value = true
+  try {
+    await changePassword({
+      oldPassword: pwdForm.oldPassword,
+      newPassword: pwdForm.newPassword
+    })
+    ElMessage.success('Password changed, please login again')
+    pwdDialogVisible.value = false
+    await userStore.logout()
+    router.push('/login')
+  } catch (e) { /* handled */ } finally {
+    pwdLoading.value = false
+  }
 }
 </script>
 

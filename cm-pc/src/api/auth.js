@@ -11,3 +11,7 @@ export function logout() {
 export function getUserInfo() {
   return request.get('/api/auth/info')
 }
+
+export function changePassword(data) {
+  return request.post('/api/auth/change-password', data)
+}

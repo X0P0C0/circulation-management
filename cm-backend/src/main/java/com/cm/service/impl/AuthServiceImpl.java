@@ -2,6 +2,7 @@ package com.cm.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.cm.common.exception.BusinessException;
+import com.cm.dto.ChangePasswordDTO;
 import com.cm.dto.LoginDTO;
 import com.cm.entity.User;
 import com.cm.mapper.UserMapper;
@@ -23,13 +24,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginVO login(LoginDTO dto) {
         User user = userMapper.selectOne(
-                new LambdaQueryWrapper<User>().eq(User::getUsername, dto.getUsername())
-        );
+                new LambdaQueryWrapper<User>().eq(User::getUsername, dto.getUsername()));
         if (user == null || !passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())) {
-            throw new BusinessException(401, "用户名或密码错误");
+            throw new BusinessException(401, "Username or password incorrect");
         }
         if (user.getStatus() != 1) {
-            throw new BusinessException(403, "账号已被禁用");
+            throw new BusinessException(403, "Account disabled");
         }
 
         String token = jwtUtil.generateToken(user.getId(), user.getUsername());
@@ -39,5 +39,18 @@ public class AuthServiceImpl implements AuthService {
         vo.setRealName(user.getRealName());
         vo.setToken(token);
         return vo;
+    }
+
+    @Override
+    public void changePassword(Long userId, ChangePasswordDTO dto) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(404, "User not found");
+        }
+        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPasswordHash())) {
+            throw new BusinessException(400, "Old password incorrect");
+        }
+        user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
+        userMapper.updateById(user);
     }
 }

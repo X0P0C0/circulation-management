@@ -2,6 +2,7 @@ package com.cm.controller;
 
 import com.cm.common.constant.Constants;
 import com.cm.common.result.Result;
+import com.cm.dto.ChangePasswordDTO;
 import com.cm.dto.LoginDTO;
 import com.cm.service.AuthService;
 import com.cm.vo.LoginVO;
@@ -33,5 +34,13 @@ public class AuthController {
         vo.setUserId((Long) request.getAttribute(Constants.USER_ID_ATTR));
         vo.setUsername((String) request.getAttribute(Constants.USERNAME_ATTR));
         return Result.success(vo);
+    }
+
+    @PostMapping("/change-password")
+    public Result<Void> changePassword(@Valid @RequestBody ChangePasswordDTO dto,
+                                        HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute(Constants.USER_ID_ATTR);
+        authService.changePassword(userId, dto);
+        return Result.success();
     }
 }
