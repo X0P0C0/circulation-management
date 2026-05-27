@@ -169,10 +169,10 @@ public class FlowServiceImpl implements FlowService {
         String currentHolder = "总库存";
         if (inv != null && inv.getAvailableQty() == 0 && !records.isEmpty()) {
             FlowRecord last = records.get(0);
-            if (last.getFlowType() == FlowTypeEnum.TRANSFER_OUT.getCode()) {
-                currentHolder = last.getWorkerName() + "（师傅）";
-            } else if (last.getFlowType() == FlowTypeEnum.SELL.getCode()) {
+            if (last.getFlowType() == FlowTypeEnum.SELL.getCode()) {
                 currentHolder = "已售出";
+            } else if (last.getFlowType() == FlowTypeEnum.TRANSFER_OUT.getCode()) {
+                currentHolder = last.getWorkerName() + "（师傅）";
             }
         }
         vo.setCurrentHolder(currentHolder);
