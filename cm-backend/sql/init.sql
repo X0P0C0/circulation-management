@@ -136,29 +136,22 @@ CREATE TABLE `flow_record` (
 -- -----------------------------------------------------------
 DROP TABLE IF EXISTS `operation_log`;
 CREATE TABLE `operation_log` (
-  `id`              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `action_type`     VARCHAR(50)     NOT NULL COMMENT '操作类型（LOGIN/INBOUND/TRANSFER_OUT/TRANSFER_IN/SELL/CREATE_WORKER 等）',
-  `content`         VARCHAR(500)    DEFAULT NULL COMMENT '操作内容描述',
-  `related_barcode` VARCHAR(100)    DEFAULT NULL COMMENT '关联条码',
+  `id`                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `action_type`       VARCHAR(50)     NOT NULL COMMENT '操作类型（LOGIN/INBOUND/TRANSFER_OUT/TRANSFER_IN/SELL 等）',
+  `content`           VARCHAR(500)    DEFAULT NULL COMMENT '操作内容描述',
+  `related_barcode`   VARCHAR(100)    DEFAULT NULL COMMENT '关联条码',
   `related_worker_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '关联师傅ID',
-  `operator`        VARCHAR(50)     DEFAULT NULL COMMENT '操作人',
-  `ip`              VARCHAR(50)     DEFAULT NULL COMMENT '操作IP',
-  `create_time`     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+  `operator`          VARCHAR(50)     DEFAULT NULL COMMENT '操作人',
+  `ip`                VARCHAR(50)     DEFAULT NULL COMMENT '操作IP',
+  `create_time`       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
   PRIMARY KEY (`id`),
   KEY `idx_action_type` (`action_type`),
   KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
 
 -- -----------------------------------------------------------
--- 初始数据
+-- 初始数据：默认配件分类
 -- -----------------------------------------------------------
-
--- 默认管理员账号：admin / admin123（BCrypt 加密）
--- BCrypt hash of "admin123": $2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH
-INSERT INTO `sys_user` (`username`, `password_hash`, `real_name`, `status`)
-VALUES ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z5EH', '系统管理员', 1);
-
--- 默认配件分类
 INSERT INTO `category` (`name`, `sort`) VALUES
 ('螺丝螺母', 1),
 ('轴承', 2),
@@ -167,3 +160,9 @@ INSERT INTO `category` (`name`, `sort`) VALUES
 ('电气元件', 5),
 ('工具', 6),
 ('其他', 99);
+
+-- -----------------------------------------------------------
+-- 注意：管理员账号由应用启动时自动创建（DataInitializer）
+-- 默认账号：admin / admin123
+-- 首次登录后请立即修改密码
+-- -----------------------------------------------------------
