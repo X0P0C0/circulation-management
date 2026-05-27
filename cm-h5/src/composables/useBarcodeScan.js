@@ -1,9 +1,10 @@
 import { ref, onUnmounted } from 'vue'
 import { showToast } from 'vant'
+import request from '@/utils/request'
 
 /**
  * 条码扫描组合式函数
- * 支持：摄像头实时扫描、相册选图识别
+ * 支持：摄像头实时扫描（本地html5-qrcode）、相册选图识别（后端ZXing）
  */
 export function useBarcodeScan() {
   const showScanner = ref(false)
@@ -30,36 +31,24 @@ export function useBarcodeScan() {
     }
   }
 
-  /** 从图片文件识别条码 */
-  const scanFromFile = (file) => {
-    return new Promise((resolve, reject) => {
-      scanning.value = true
-      const reader = new FileReader()
-      reader.onload = async (e) => {
-        try {
-          const { Html5Qrcode } = await import('html5-qrcode')
-          const qr = new Html5Qrcode('qr-temp')
-          try {
-            const result = await qr.scanFile(file, true)
-            scanning.value = false
-            resolve(result)
-          } catch (err) {
-            scanning.value = false
-            showToast('未能识别到条码，请尝试更清晰的图片')
-            resolve(null)
-          }
-        } catch (e) {
-          scanning.value = false
-          showToast('条码识别组件加载失败')
-          resolve(null)
-        }
-      }
-      reader.onerror = () => {
-        scanning.value = false
-        reject(new Error('文件读取失败'))
-      }
-      reader.readAsDataURL(file)
-    })
+  /** 从图片文件识别条码（调用后端ZXing接口） */
+  const scanFromFile = async (file) => {
+    scanning.value = true
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const { data } = await request.post('/api/barcode/recognize', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+
+      return data.barcode
+    } catch (e) {
+      showToast('未能识别到条码，请尝试更清晰的图片')
+      return null
+    } finally {
+      scanning.value = false
+    }
   }
 
   /** 停止扫描 */

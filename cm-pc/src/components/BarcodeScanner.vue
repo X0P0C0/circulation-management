@@ -30,7 +30,7 @@
 import { ref, watch } from 'vue'
 import { Camera, CircleCheckFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { Html5Qrcode } from 'html5-qrcode'
+import request from '@/utils/request'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -63,28 +63,18 @@ const handleFileChange = async (file) => {
   scanResult.value = ''
 
   try {
-    // 创建隐藏的html元素供html5-qrcode使用
-    let tempDiv = document.getElementById('qr-scanner-temp')
-    if (!tempDiv) {
-      tempDiv = document.createElement('div')
-      tempDiv.id = 'qr-scanner-temp'
-      tempDiv.style.display = 'none'
-      document.body.appendChild(tempDiv)
-    }
+    const formData = new FormData()
+    formData.append('file', file.raw)
 
-    const qr = new Html5Qrcode('qr-scanner-temp')
-    const result = await qr.scanFile(file.raw, true)
+    const { data } = await request.post('/api/barcode/recognize', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
 
-    if (result) {
-      inputValue.value = result
-      scanResult.value = '识别成功：' + result
-      emit('scanned', result)
-    } else {
-      ElMessage.warning('未能识别到条码，请尝试更清晰的图片或手动输入')
-    }
+    inputValue.value = data.barcode
+    scanResult.value = '识别成功：' + data.barcode + '（' + data.format + '）'
+    emit('scanned', data.barcode)
   } catch (e) {
-    console.error('条码识别失败:', e)
-    ElMessage.warning('未能识别到条码，请尝试更清晰的图片或手动输入')
+    ElMessage.warning('条码识别失败，请手动输入')
   } finally {
     scanning.value = false
     if (uploadRef.value) uploadRef.value.clearFiles()
