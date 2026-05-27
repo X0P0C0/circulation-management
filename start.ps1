@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # 配件流转管理系统 - 一键启动脚本
 # 功能：同时启动后端 + PC前端 + H5前端
 # 用法：在项目根目录执行 .\start.ps1
@@ -47,7 +47,7 @@ try {
         -WindowStyle Normal
     $processes += $pcProc
     Write-Host "  PC 前端进程已启动 (PID: $($pcProc.Id))" -ForegroundColor Green
-    Write-Host "  地址: http://localhost:3000" -ForegroundColor Gray
+    Write-Host "  地址: http://localhost:5173" -ForegroundColor Gray
 
     # ---- 启动 H5 前端 ----
     Write-Host "[3/3] 启动 H5 前端 (Vite) ..." -ForegroundColor Yellow
@@ -57,7 +57,7 @@ try {
         -WindowStyle Normal
     $processes += $h5Proc
     Write-Host "  H5 前端进程已启动 (PID: $($h5Proc.Id))" -ForegroundColor Green
-    Write-Host "  地址: http://localhost:3001" -ForegroundColor Gray
+    Write-Host "  地址: http://localhost:5174" -ForegroundColor Gray
 
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Green
@@ -65,8 +65,8 @@ try {
     Write-Host "========================================" -ForegroundColor Green
     Write-Host ""
     Write-Host "  后端:     http://localhost:8080" -ForegroundColor White
-    Write-Host "  PC 前端:  http://localhost:3000" -ForegroundColor White
-    Write-Host "  H5 前端:  http://localhost:3001" -ForegroundColor White
+    Write-Host "  PC 前端:  http://localhost:5173" -ForegroundColor White
+    Write-Host "  H5 前端:  http://localhost:5174" -ForegroundColor White
     Write-Host ""
     Write-Host "  默认账号: admin / admin123" -ForegroundColor Cyan
     Write-Host ""
