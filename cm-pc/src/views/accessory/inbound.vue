@@ -4,13 +4,9 @@
       <h2 class="page-title">配件入库</h2>
     </div>
     <el-card>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" style="max-width: 600px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" style="max-width: 650px">
         <el-form-item label="条码" prop="barcode">
-          <el-input v-model="form.barcode" placeholder="扫码或手动输入条码">
-            <template #append>
-              <el-button @click="handleScan">扫码</el-button>
-            </template>
-          </el-input>
+          <BarcodeScanner v-model="form.barcode" @scanned="onBarcodeScanned" />
         </el-form-item>
         <el-form-item label="配件名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入配件名称" />
@@ -24,7 +20,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="单位">
-          <el-input v-model="form.unit" placeholder="个/件/套" style="width: 120px" />
+          <el-input v-model="form.unit" placeholder="个/件/套" style="width: 150px" />
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息" />
@@ -43,6 +39,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { accessoryInbound } from '@/api/accessory'
 import { getCategories } from '@/api/category'
+import BarcodeScanner from '@/components/BarcodeScanner.vue'
 
 const formRef = ref()
 const loading = ref(false)
@@ -56,8 +53,9 @@ const rules = {
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }]
 }
 
-const handleScan = () => {
-  ElMessage.info('请使用H5端扫码，或手动输入条码')
+const onBarcodeScanned = (code) => {
+  form.barcode = code
+  ElMessage.success('条码已填入：' + code)
 }
 
 const handleSubmit = async () => {
@@ -83,3 +81,9 @@ onMounted(async () => {
   } catch (e) { /* ignore */ }
 })
 </script>
+
+<style scoped>
+.page-container { padding: 20px; }
+.page-header { margin-bottom: 16px; }
+.page-title { margin: 0; font-size: 18px; }
+</style>

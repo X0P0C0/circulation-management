@@ -63,16 +63,22 @@ const routes = [
         meta: { title: '师傅管理', icon: 'User' }
       },
       {
+        path: 'user',
+        name: 'UserManage',
+        component: () => import('@/views/user/index.vue'),
+        meta: { title: '用户管理', icon: 'UserFilled', adminOnly: true }
+      },
+      {
         path: 'category',
         name: 'Category',
         component: () => import('@/views/category/index.vue'),
-        meta: { title: '分类管理', icon: 'Menu' }
+        meta: { title: '分类管理', icon: 'Menu', adminOnly: true }
       },
       {
         path: 'log',
         name: 'OperationLog',
         component: () => import('@/views/log/index.vue'),
-        meta: { title: '操作日志', icon: 'Document' }
+        meta: { title: '操作日志', icon: 'Document', adminOnly: true }
       }
     ]
   }
@@ -101,11 +107,20 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // Fetch user info on first navigation after page refresh
+  // 首次导航时获取用户信息
   if (!hasFetchedUserInfo) {
     const userStore = useUserStore()
     await userStore.fetchUserInfo()
     hasFetchedUserInfo = true
+  }
+
+  // 管理员专属页面权限校验
+  if (to.meta?.adminOnly) {
+    const userStore = useUserStore()
+    if (userStore.role !== 1) {
+      next('/dashboard')
+      return
+    }
   }
 
   next()

@@ -36,7 +36,7 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
         Accessory existing = getOne(new LambdaQueryWrapper<Accessory>()
                 .eq(Accessory::getBarcode, dto.getBarcode()));
         if (existing != null) {
-            throw new BusinessException(409, "Barcode already exists: " + existing.getName());
+            throw new BusinessException(409, "该条码已存在，对应配件：" + existing.getName());
         }
 
         Accessory accessory = new Accessory();
@@ -49,7 +49,6 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
         inventory.setAvailableQty(1);
         inventoryMapper.insert(inventory);
 
-        // Write flow record
         FlowRecord record = new FlowRecord();
         record.setAccessoryId(accessory.getId());
         record.setBarcode(dto.getBarcode());
@@ -59,7 +58,7 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
         record.setOperator(operator);
         flowRecordMapper.insert(record);
 
-        operationLogService.log("INBOUND", "Inbound: " + dto.getName() + " (" + dto.getBarcode() + ")",
+        operationLogService.log("INBOUND", "配件入库：" + dto.getName() + "（" + dto.getBarcode() + "）",
                 dto.getBarcode(), null, operator, null);
     }
 
@@ -68,7 +67,7 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
         Accessory accessory = getOne(new LambdaQueryWrapper<Accessory>()
                 .eq(Accessory::getBarcode, barcode));
         if (accessory == null) {
-            throw new BusinessException(404, "Barcode not found");
+            throw new BusinessException(404, "条码不存在");
         }
 
         Inventory inventory = inventoryMapper.selectOne(

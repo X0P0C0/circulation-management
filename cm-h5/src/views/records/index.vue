@@ -1,18 +1,18 @@
 <template>
   <div>
-    <van-nav-bar title="Records" left-arrow @click-left="router.back()" />
-    <van-tabs v-model:active="activeTab" @change="loadData">
-      <van-tab title="All" name="all" />
-      <van-tab title="Inbound" name="1" />
-      <van-tab title="Transfer Out" name="2" />
-      <van-tab title="Return" name="3" />
-      <van-tab title="Sell" name="4" />
+    <van-nav-bar title="操作记录" left-arrow @click-left="router.back()" />
+    <van-tabs v-model:active="activeTab" @change="onTabChange">
+      <van-tab title="全部" name="all" />
+      <van-tab title="入库" name="1" />
+      <van-tab title="领用" name="2" />
+      <van-tab title="归还" name="3" />
+      <van-tab title="售卖" name="4" />
     </van-tabs>
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-      <van-list v-model:loading="listLoading" :finished="finished" finished-text="No more" @load="loadData">
+      <van-list v-model:loading="listLoading" :finished="finished" finished-text="没有更多了" @load="loadData">
         <van-cell v-for="item in list" :key="item.id"
           :title="item.accessoryName"
-          :label="'Barcode: ' + item.barcode + (item.workerName ? ' | Worker: ' + item.workerName : '')"
+          :label="'条码: ' + item.barcode + (item.workerName ? ' | 师傅: ' + item.workerName : '')"
           :value="formatType(item.flowType)" />
       </van-list>
     </van-pull-refresh>
@@ -32,7 +32,13 @@ const finished = ref(false)
 const refreshing = ref(false)
 const pageNum = ref(1)
 
-const formatType = (t) => ({ 1: 'Inbound', 2: 'Out', 3: 'Return', 4: 'Sell' }[t] || '-')
+const formatType = (t) => ({ 1: '入库', 2: '领用', 3: '归还', 4: '售卖' }[t] || '-')
+
+const onTabChange = () => {
+  pageNum.value = 1
+  list.value = []
+  finished.value = false
+}
 
 const loadData = async () => {
   const params = { pageNum: pageNum.value, pageSize: 20 }
@@ -50,6 +56,7 @@ const loadData = async () => {
 const onRefresh = () => {
   pageNum.value = 1
   finished.value = false
+  list.value = []
   loadData()
 }
 </script>

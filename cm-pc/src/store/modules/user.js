@@ -7,8 +7,13 @@ export const useUserStore = defineStore('user', {
     token: getToken() || '',
     username: '',
     realName: '',
-    userId: null
+    userId: null,
+    role: null,
+    roleName: ''
   }),
+  getters: {
+    isAdmin: (state) => state.role === 1
+  },
   actions: {
     async login(loginForm) {
       const { data } = await loginApi(loginForm)
@@ -16,6 +21,8 @@ export const useUserStore = defineStore('user', {
       this.username = data.username
       this.realName = data.realName
       this.userId = data.userId
+      this.role = data.role
+      this.roleName = data.roleName || ''
       setToken(data.token)
     },
     async fetchUserInfo() {
@@ -24,6 +31,8 @@ export const useUserStore = defineStore('user', {
         this.userId = data.userId
         this.username = data.username
         this.realName = data.realName || data.username
+        this.role = data.role
+        this.roleName = data.roleName || ''
       } catch (e) {
         this.logout()
       }
@@ -34,6 +43,8 @@ export const useUserStore = defineStore('user', {
       this.username = ''
       this.realName = ''
       this.userId = null
+      this.role = null
+      this.roleName = ''
       removeToken()
     }
   }

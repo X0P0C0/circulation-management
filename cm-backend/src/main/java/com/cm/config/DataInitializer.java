@@ -2,6 +2,7 @@ package com.cm.config;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.cm.entity.User;
+import com.cm.enums.RoleEnum;
 import com.cm.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setUsername("admin");
             admin.setPasswordHash(encoder.encode("admin123"));
             admin.setRealName("系统管理员");
+            admin.setRole(RoleEnum.ADMIN.getCode());
             admin.setStatus(1);
             userMapper.insert(admin);
             log.info("========================================");

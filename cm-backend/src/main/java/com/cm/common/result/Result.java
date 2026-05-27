@@ -8,16 +8,24 @@ public class Result<T> {
     private String message;
     private T data;
 
-    public static <T> Result<T> success() {
-        return success(null);
+    public static <T> Result<T> ok() {
+        return ok(null);
     }
 
-    public static <T> Result<T> success(T data) {
+    public static <T> Result<T> ok(T data) {
         Result<T> r = new Result<>();
         r.setCode(200);
         r.setMessage("操作成功");
         r.setData(data);
         return r;
+    }
+
+    public static <T> Result<T> success() {
+        return ok(null);
+    }
+
+    public static <T> Result<T> success(T data) {
+        return ok(data);
     }
 
     public static <T> Result<T> error(int code, String message) {

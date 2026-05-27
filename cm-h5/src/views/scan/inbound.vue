@@ -2,11 +2,12 @@
   <div>
     <van-nav-bar title="配件入库" left-arrow @click-left="router.back()" />
     <van-form @submit="handleSubmit">
-      <van-cell-group inset title="条码">
+      <van-cell-group inset title="条码" style="margin-top: 12px">
         <van-field v-model="form.barcode" label="条码" placeholder="扫码或输入条码" required
           :rules="[{ required: true, message: '请输入条码' }]">
           <template #button>
-            <van-button size="small" type="primary" @click="startScan">扫码</van-button>
+            <van-button size="small" type="primary" @click="startCameraScan">拍照扫码</van-button>
+            <van-button size="small" style="margin-left: 4px" @click="triggerFileInput">相册识别</van-button>
           </template>
         </van-field>
       </van-cell-group>
@@ -28,65 +29,61 @@
       <van-picker :columns="categoryColumns" @confirm="onCategoryConfirm" @cancel="showCategoryPicker = false" />
     </van-popup>
 
+    <!-- 摄像头扫码弹窗 -->
     <van-popup v-model:show="showScanner" position="bottom" style="height: 60%">
       <div id="qr-reader" style="width: 100%"></div>
       <div style="padding: 16px; text-align: center">
         <van-button @click="stopScan">关闭扫码</van-button>
       </div>
     </van-popup>
+
+    <!-- 隐藏的文件选择 -->
+    <input ref="fileInput" type="file" accept="image/*" style="display: none" @change="handleFileChange" />
+    <!-- 隐藏的临时元素用于文件识别 -->
+    <div id="qr-temp" style="display: none"></div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { accessoryInbound } from '@/api/accessory'
 import { getCategories } from '@/api/category'
+import { useBarcodeScan } from '@/composables/useBarcodeScan'
 
 const router = useRouter()
+const { showScanner, scanning, startCameraScan, scanFromFile, stopScan } = useBarcodeScan()
+
 const loading = ref(false)
 const showCategoryPicker = ref(false)
-const showScanner = ref(false)
 const categoryName = ref('')
 const categoryColumns = ref([])
+const fileInput = ref(null)
 let categoryList = []
-let html5QrCode = null
 
 const form = reactive({ barcode: '', name: '', spec: '', categoryId: null, unit: '个', remark: '' })
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
+
+const handleFileChange = async (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+  const result = await scanFromFile(file)
+  if (result) {
+    form.barcode = result
+    showToast('识别成功：' + result)
+  }
+  // 清除input值，允许重复选择同一文件
+  e.target.value = ''
+}
 
 const onCategoryConfirm = ({ selectedOptions }) => {
   form.categoryId = selectedOptions[0]?.value
   categoryName.value = selectedOptions[0]?.text
   showCategoryPicker.value = false
-}
-
-const startScan = async () => {
-  showScanner.value = true
-  try {
-    const { Html5Qrcode } = await import('html5-qrcode')
-    html5QrCode = new Html5Qrcode('qr-reader')
-    await html5QrCode.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 250, height: 150 } },
-      (decodedText) => {
-        form.barcode = decodedText
-        stopScan()
-        showToast('扫码成功')
-      }
-    )
-  } catch (e) {
-    showToast('无法调用摄像头，请手动输入')
-    showScanner.value = false
-  }
-}
-
-const stopScan = async () => {
-  if (html5QrCode) {
-    try { await html5QrCode.stop() } catch (e) { /* ignore */ }
-    html5QrCode = null
-  }
-  showScanner.value = false
 }
 
 const handleSubmit = async () => {
@@ -106,6 +103,4 @@ onMounted(async () => {
     categoryColumns.value = data.map(c => ({ text: c.name, value: c.id }))
   } catch (e) { /* ignore */ }
 })
-
-onUnmounted(() => { stopScan() })
 </script>

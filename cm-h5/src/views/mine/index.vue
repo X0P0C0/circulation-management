@@ -1,25 +1,32 @@
 <template>
   <div>
-    <van-nav-bar title="My" />
+    <van-nav-bar title="我的" />
     <van-cell-group inset style="margin-top: 12px">
-      <van-cell title="Username" :value="userStore.username" />
-      <van-cell title="Name" :value="userStore.realName" />
+      <van-cell title="用户名" :value="userStore.username" />
+      <van-cell title="姓名" :value="userStore.realName" />
+      <van-cell title="角色">
+        <template #value>
+          <van-tag :type="userStore.role === 1 ? 'danger' : 'primary'" size="small">
+            {{ userStore.roleName }}
+          </van-tag>
+        </template>
+      </van-cell>
     </van-cell-group>
-    <van-cell-group inset style="margin-top: 12px" title="Security">
-      <van-cell title="Change Password" is-link @click="showPwdDialog = true" />
+    <van-cell-group inset style="margin-top: 12px" title="安全设置">
+      <van-cell title="修改密码" is-link @click="showPwdDialog = true" />
     </van-cell-group>
     <div style="margin: 24px 16px">
-      <van-button round block type="danger" @click="handleLogout">Logout</van-button>
+      <van-button round block type="danger" @click="handleLogout">退出登录</van-button>
     </div>
 
-    <van-dialog v-model:show="showPwdDialog" title="Change Password" show-cancel-button
+    <van-dialog v-model:show="showPwdDialog" title="修改密码" show-cancel-button
       :before-close="onPwdDialogClose">
       <van-form ref="pwdFormRef">
         <van-cell-group inset>
-          <van-field v-model="pwdForm.oldPassword" type="password" label="Old Password"
-            placeholder="Enter old password" :rules="[{ required: true, message: 'Required' }]" />
-          <van-field v-model="pwdForm.newPassword" type="password" label="New Password"
-            placeholder="Min 6 chars" :rules="[{ required: true, message: 'Required' }]" />
+          <van-field v-model="pwdForm.oldPassword" type="password" label="原密码"
+            placeholder="请输入原密码" :rules="[{ required: true, message: '请输入原密码' }]" />
+          <van-field v-model="pwdForm.newPassword" type="password" label="新密码"
+            placeholder="不少于6位" :rules="[{ required: true, message: '请输入新密码' }]" />
         </van-cell-group>
       </van-form>
     </van-dialog>
@@ -40,7 +47,7 @@ const pwdFormRef = ref()
 const pwdForm = reactive({ oldPassword: '', newPassword: '' })
 
 const handleLogout = async () => {
-  await showConfirmDialog({ title: 'Confirm', message: 'Logout?' })
+  await showConfirmDialog({ title: '提示', message: '确定退出登录？' })
   userStore.logout()
   router.push('/login')
 }
@@ -48,16 +55,16 @@ const handleLogout = async () => {
 const onPwdDialogClose = async (action) => {
   if (action === 'confirm') {
     if (!pwdForm.oldPassword || !pwdForm.newPassword) {
-      showToast('Please fill all fields')
+      showToast('请填写完整信息')
       return false
     }
     if (pwdForm.newPassword.length < 6) {
-      showToast('Min 6 chars')
+      showToast('新密码不少于6位')
       return false
     }
     try {
       await changePassword(pwdForm)
-      showToast.success('Changed, login again')
+      showToast.success('密码已修改，请重新登录')
       showPwdDialog.value = false
       userStore.logout()
       router.push('/login')

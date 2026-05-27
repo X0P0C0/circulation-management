@@ -1,4 +1,4 @@
-﻿-- ============================================================
+-- ============================================================
 -- 配件流转管理系统 数据库初始化脚本
 -- Database: cm_db
 -- Character Set: utf8mb4
@@ -18,12 +18,13 @@ CREATE TABLE `sys_user` (
   `username`      VARCHAR(50)     NOT NULL COMMENT '用户名',
   `password_hash` VARCHAR(100)    NOT NULL COMMENT '密码哈希（BCrypt）',
   `real_name`     VARCHAR(50)     DEFAULT NULL COMMENT '真实姓名',
+  `role`          TINYINT UNSIGNED NOT NULL DEFAULT 2 COMMENT '角色：1=管理员 2=操作员',
   `status`        TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '状态：1=正常 0=禁用',
   `create_time`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理员用户表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统用户表';
 
 -- -----------------------------------------------------------
 -- 2. 配件分类表

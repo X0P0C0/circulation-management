@@ -4,25 +4,22 @@
       <h2 class="page-title">配件归还</h2>
     </div>
     <el-card>
-      <el-form label-width="100px" style="max-width: 700px">
+      <el-form label-width="100px" style="max-width: 750px">
         <el-form-item label="选择师傅" required>
           <el-select v-model="workerId" placeholder="请选择归还师傅" filterable style="width: 100%">
             <el-option v-for="w in workerList" :key="w.id" :label="w.name" :value="w.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="条码录入">
-          <el-input v-model="barcodeInput" placeholder="输入条码后回车添加" @keyup.enter="addBarcode">
-            <template #append>
-              <el-button @click="addBarcode">添加</el-button>
-            </template>
-          </el-input>
+        <el-form-item label="扫码录入">
+          <BarcodeScanner v-model="barcodeInput" placeholder="输入或识别条码后自动添加" @scanned="onBarcodeScanned" />
         </el-form-item>
         <el-form-item label="待归还列表">
-          <el-table :data="barcodeList" stripe border style="width: 100%" empty-text="暂无配件">
-            <el-table-column type="index" label="序号" width="60" />
-            <el-table-column prop="barcode" label="条码" />
+          <el-table :data="barcodeList" stripe border style="width: 100%" empty-text="暂无配件，请扫码或输入条码添加">
+            <el-table-column type="index" label="序号" width="60" align="center" />
+            <el-table-column prop="barcode" label="条码" width="180" />
             <el-table-column prop="name" label="配件名称" />
-            <el-table-column label="操作" width="80">
+            <el-table-column prop="spec" label="规格型号" />
+            <el-table-column label="操作" width="80" align="center">
               <template #default="{ $index }">
                 <el-button link type="danger" @click="barcodeList.splice($index, 1)">移除</el-button>
               </template>
@@ -34,7 +31,7 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="loading" :disabled="!workerId || barcodeList.length === 0" @click="handleSubmit">
-            确认归还 ({{ barcodeList.length }}件)
+            确认归还（{{ barcodeList.length }}件）
           </el-button>
         </el-form-item>
       </el-form>
@@ -48,6 +45,7 @@ import { ElMessage } from 'element-plus'
 import { getAllWorkers } from '@/api/worker'
 import { getAccessoryByBarcode } from '@/api/accessory'
 import { transferIn } from '@/api/flow'
+import BarcodeScanner from '@/components/BarcodeScanner.vue'
 
 const workerId = ref(null)
 const workerList = ref([])
@@ -56,8 +54,11 @@ const barcodeList = ref([])
 const remark = ref('')
 const loading = ref(false)
 
-const addBarcode = async () => {
-  const barcode = barcodeInput.value.trim()
+const onBarcodeScanned = async (code) => {
+  await addBarcodeByCode(code)
+}
+
+const addBarcodeByCode = async (barcode) => {
   if (!barcode) return
   if (barcodeList.value.find(b => b.barcode === barcode)) {
     ElMessage.warning('该条码已添加')
@@ -68,6 +69,7 @@ const addBarcode = async () => {
     const { data } = await getAccessoryByBarcode(barcode)
     barcodeList.value.push(data)
     barcodeInput.value = ''
+    ElMessage.success('已添加：' + data.name)
   } catch (e) { /* handled */ }
 }
 
@@ -94,3 +96,9 @@ onMounted(async () => {
   } catch (e) { /* ignore */ }
 })
 </script>
+
+<style scoped>
+.page-container { padding: 20px; }
+.page-header { margin-bottom: 16px; }
+.page-title { margin: 0; font-size: 18px; }
+</style>

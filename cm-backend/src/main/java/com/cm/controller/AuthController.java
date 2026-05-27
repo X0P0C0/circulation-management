@@ -4,6 +4,7 @@ import com.cm.common.constant.Constants;
 import com.cm.common.result.Result;
 import com.cm.dto.ChangePasswordDTO;
 import com.cm.dto.LoginDTO;
+import com.cm.enums.RoleEnum;
 import com.cm.service.AuthService;
 import com.cm.vo.LoginVO;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,12 +21,12 @@ public class AuthController {
 
     @PostMapping("/login")
     public Result<LoginVO> login(@Valid @RequestBody LoginDTO dto) {
-        return Result.success(authService.login(dto));
+        return Result.ok(authService.login(dto));
     }
 
     @PostMapping("/logout")
     public Result<Void> logout() {
-        return Result.success();
+        return Result.ok();
     }
 
     @GetMapping("/info")
@@ -33,7 +34,10 @@ public class AuthController {
         LoginVO vo = new LoginVO();
         vo.setUserId((Long) request.getAttribute(Constants.USER_ID_ATTR));
         vo.setUsername((String) request.getAttribute(Constants.USERNAME_ATTR));
-        return Result.success(vo);
+        int role = (int) request.getAttribute(Constants.ROLE_ATTR);
+        vo.setRole(role);
+        vo.setRoleName(RoleEnum.of(role).getDesc());
+        return Result.ok(vo);
     }
 
     @PostMapping("/change-password")
@@ -41,6 +45,6 @@ public class AuthController {
                                         HttpServletRequest request) {
         Long userId = (Long) request.getAttribute(Constants.USER_ID_ATTR);
         authService.changePassword(userId, dto);
-        return Result.success();
+        return Result.ok();
     }
 }

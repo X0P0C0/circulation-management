@@ -2,7 +2,7 @@
   <div class="app-layout">
     <aside class="sidebar" :class="{ collapsed: isCollapsed }">
       <div class="sidebar-logo">
-        <span v-show="!isCollapsed" class="logo-text">CM System</span>
+        <span v-show="!isCollapsed" class="logo-text">配件流转管理系统</span>
         <span v-show="isCollapsed" class="logo-text">CM</span>
       </div>
       <el-menu
@@ -29,13 +29,15 @@
             <Expand v-else />
           </el-icon>
           <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">Home</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
             <el-breadcrumb-item v-if="currentRoute?.meta?.title">
               {{ currentRoute.meta.title }}
             </el-breadcrumb-item>
           </el-breadcrumb>
         </div>
         <div class="navbar-right">
+          <el-tag v-if="userStore.role === 1" size="small" type="danger">管理员</el-tag>
+          <el-tag v-else size="small" type="info">操作员</el-tag>
           <span class="username">{{ userStore.realName || userStore.username }}</span>
           <el-dropdown @command="handleCommand">
             <el-button link>
@@ -43,8 +45,8 @@
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="password">Change Password</el-dropdown-item>
-                <el-dropdown-item command="logout" divided>Logout</el-dropdown-item>
+                <el-dropdown-item command="password">修改密码</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -60,22 +62,22 @@
       </main>
     </div>
 
-    <!-- Change Password Dialog -->
-    <el-dialog v-model="pwdDialogVisible" title="Change Password" width="400px" :close-on-click-modal="false">
-      <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-width="120px">
-        <el-form-item label="Old Password" prop="oldPassword">
-          <el-input v-model="pwdForm.oldPassword" type="password" show-password />
+    <!-- 修改密码弹窗 -->
+    <el-dialog v-model="pwdDialogVisible" title="修改密码" width="400px" :close-on-click-modal="false">
+      <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-width="100px">
+        <el-form-item label="原密码" prop="oldPassword">
+          <el-input v-model="pwdForm.oldPassword" type="password" show-password placeholder="请输入原密码" />
         </el-form-item>
-        <el-form-item label="New Password" prop="newPassword">
-          <el-input v-model="pwdForm.newPassword" type="password" show-password />
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="请输入新密码" />
         </el-form-item>
-        <el-form-item label="Confirm" prop="confirmPassword">
-          <el-input v-model="pwdForm.confirmPassword" type="password" show-password />
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="再次输入新密码" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="pwdDialogVisible = false">Cancel</el-button>
-        <el-button type="primary" :loading="pwdLoading" @click="handleChangePassword">Confirm</el-button>
+        <el-button @click="pwdDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="pwdLoading" @click="handleChangePassword">确认</el-button>
       </template>
     </el-dialog>
   </div>
@@ -98,7 +100,12 @@ const currentRoute = computed(() => route)
 
 const menuRoutes = computed(() => {
   const mainRoute = router.options.routes.find(r => r.path === '/')
-  return mainRoute?.children?.filter(r => !r.meta?.hidden) || []
+  const allRoutes = mainRoute?.children?.filter(r => !r.meta?.hidden) || []
+  // 操作员不显示：用户管理、分类管理、操作日志
+  if (userStore.role !== 1) {
+    return allRoutes.filter(r => !r.meta?.adminOnly)
+  }
+  return allRoutes
 })
 
 const handleCommand = (cmd) => {
@@ -110,29 +117,29 @@ const handleCommand = (cmd) => {
 }
 
 const handleLogout = async () => {
-  await ElMessageBox.confirm('Confirm logout?', 'Tip', { type: 'warning' })
+  await ElMessageBox.confirm('确定退出登录？', '提示', { type: 'warning' })
   await userStore.logout()
   router.push('/login')
 }
 
-// Change password
+// 修改密码
 const pwdDialogVisible = ref(false)
 const pwdFormRef = ref()
 const pwdLoading = ref(false)
 const pwdForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
 
 const pwdRules = {
-  oldPassword: [{ required: true, message: 'Required', trigger: 'blur' }],
+  oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
   newPassword: [
-    { required: true, message: 'Required', trigger: 'blur' },
-    { min: 6, message: 'Min 6 chars', trigger: 'blur' }
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, message: 'Required', trigger: 'blur' },
+    { required: true, message: '请确认新密码', trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
         if (value !== pwdForm.newPassword) {
-          callback(new Error('Passwords do not match'))
+          callback(new Error('两次输入的密码不一致'))
         } else {
           callback()
         }
@@ -151,11 +158,8 @@ const handleChangePassword = async () => {
   await pwdFormRef.value.validate()
   pwdLoading.value = true
   try {
-    await changePassword({
-      oldPassword: pwdForm.oldPassword,
-      newPassword: pwdForm.newPassword
-    })
-    ElMessage.success('Password changed, please login again')
+    await changePassword({ oldPassword: pwdForm.oldPassword, newPassword: pwdForm.newPassword })
+    ElMessage.success('密码修改成功，请重新登录')
     pwdDialogVisible.value = false
     await userStore.logout()
     router.push('/login')
@@ -165,16 +169,16 @@ const handleChangePassword = async () => {
 }
 </script>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .app-layout {
   display: flex;
   height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
   width: 220px;
-  background: #fff;
-  border-right: 1px solid #e4e7ed;
+  background: #304156;
   transition: width 0.3s;
   overflow: hidden;
 
@@ -188,17 +192,27 @@ const handleChangePassword = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid #e4e7ed;
-  font-size: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: #fff;
   white-space: nowrap;
+  letter-spacing: 1px;
 }
 
 .sidebar-menu {
   border-right: none;
   height: calc(100vh - 50px);
   overflow-y: auto;
+  background: #304156;
+
+  :deep(.el-menu-item) {
+    color: #bfcbd9;
+    &:hover, &.is-active {
+      background: #263445;
+      color: #409eff;
+    }
+  }
 }
 
 .main-container {
@@ -216,6 +230,7 @@ const handleChangePassword = async () => {
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
 }
 
 .navbar-left {
@@ -248,6 +263,7 @@ const handleChangePassword = async () => {
 .app-main {
   flex: 1;
   overflow-y: auto;
-  background: #f5f7fa;
+  background: #f0f2f5;
+  padding: 0;
 }
 </style>
