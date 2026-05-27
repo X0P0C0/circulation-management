@@ -1,71 +1,66 @@
 @echo off
-chcp 65001 >nul
 echo.
 echo ========================================
-echo   配件流转管理系统 - 环境初始化
+echo   CM System - Environment Setup
 echo ========================================
 echo.
 
-set PROJECT_ROOT=%~dp0
-
-echo [1/4] 检查 Java...
+echo [1/4] Checking Java...
 java -version 2>nul
 if %errorlevel% neq 0 (
-    echo   ERROR: 未检测到 Java，请安装 JDK 17+
-    goto :error
+    echo   ERROR: Java not found. Please install JDK 17+
+    goto :fail
 )
 echo   OK
 
 echo.
-echo [2/4] 检查 Maven...
-mvn -version 2>nul
+echo [2/4] Checking Maven...
+call mvn -version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo   ERROR: 未检测到 Maven
-    goto :error
+    echo   ERROR: Maven not found.
+    goto :fail
 )
 echo   OK
 
 echo.
-echo [3/4] 检查 Node.js...
-call fnm use 2>nul
-node -v 2>nul
+echo [3/4] Checking Node.js...
+call fnm use >nul 2>&1
+call node -v >nul 2>&1
 if %errorlevel% neq 0 (
-    echo   ERROR: 未检测到 Node.js
-    goto :error
+    echo   ERROR: Node.js not found. Check fnm setup.
+    goto :fail
 )
 echo   OK
 
 echo.
-echo [4/4] 安装前端依赖...
+echo [4/4] Installing frontend dependencies...
+
 echo   -> cm-pc...
-cd /d "%PROJECT_ROOT%cm-pc"
-call npm install --silent
+cd /d "%~dp0cm-pc"
+call npm install
 if %errorlevel% neq 0 (
-    echo   ERROR: cm-pc 依赖安装失败
-    goto :error
+    echo   ERROR: cm-pc npm install failed
+    goto :fail
 )
-echo   OK
-
 echo   -> cm-h5...
-cd /d "%PROJECT_ROOT%cm-h5"
-call npm install --silent
+cd /d "%~dp0cm-h5"
+call npm install
 if %errorlevel% neq 0 (
-    echo   ERROR: cm-h5 依赖安装失败
-    goto :error
+    echo   ERROR: cm-h5 npm install failed
+    goto :fail
 )
-echo   OK
 
-cd /d "%PROJECT_ROOT%"
+cd /d "%~dp0"
 echo.
 echo ========================================
-echo   初始化完成！双击 start.bat 启动系统
+echo   Setup complete! Run start.bat to launch.
 echo ========================================
 pause
 exit /b 0
 
-:error
+:fail
+cd /d "%~dp0"
 echo.
-echo 初始化失败，请检查环境后重试。
-cd /d "%PROJECT_ROOT%"
+echo Setup failed. Please check your environment.
 pause
 exit /b 1
