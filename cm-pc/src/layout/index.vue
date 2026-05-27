@@ -2,8 +2,12 @@
   <div class="app-layout">
     <aside class="sidebar" :class="{ collapsed: isCollapsed }">
       <div class="sidebar-logo">
-        <span v-show="!isCollapsed" class="logo-text">配件流转管理系统</span>
-        <span v-show="isCollapsed" class="logo-text">CM</span>
+        <div class="logo-icon">
+          <el-icon :size="24" color="#fff"><Box /></el-icon>
+        </div>
+        <transition name="fade">
+          <span v-show="!isCollapsed" class="logo-text">配件流转管理</span>
+        </transition>
       </div>
       <el-menu
         :default-active="activeMenu"
@@ -19,6 +23,10 @@
           </el-menu-item>
         </template>
       </el-menu>
+      <div class="sidebar-footer">
+        <el-icon :size="14"><InfoFilled /></el-icon>
+        <span v-show="!isCollapsed">v1.0.0</span>
+      </div>
     </aside>
 
     <div class="main-container">
@@ -36,17 +44,26 @@
           </el-breadcrumb>
         </div>
         <div class="navbar-right">
-          <el-tag v-if="userStore.role === 1" size="small" type="danger">管理员</el-tag>
-          <el-tag v-else size="small" type="info">操作员</el-tag>
+          <el-tag v-if="userStore.role === 1" size="small" effect="dark" round type="danger">
+            <el-icon><UserFilled /></el-icon> 管理员
+          </el-tag>
+          <el-tag v-else size="small" effect="dark" round type="info">
+            <el-icon><User /></el-icon> 操作员
+          </el-tag>
+          <el-divider direction="vertical" />
           <span class="username">{{ userStore.realName || userStore.username }}</span>
-          <el-dropdown @command="handleCommand">
-            <el-button link>
-              <el-icon><Setting /></el-icon>
-            </el-button>
+          <el-dropdown @command="handleCommand" trigger="click">
+            <el-avatar :size="32" class="user-avatar">
+              {{ (userStore.realName || userStore.username || '').charAt(0) }}
+            </el-avatar>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="password">修改密码</el-dropdown-item>
-                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                <el-dropdown-item command="password">
+                  <el-icon><Lock /></el-icon> 修改密码
+                </el-dropdown-item>
+                <el-dropdown-item command="logout" divided>
+                  <el-icon><SwitchButton /></el-icon> 退出登录
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -55,29 +72,37 @@
 
       <main class="app-main">
         <router-view v-slot="{ Component }">
-          <keep-alive>
-            <component :is="Component" />
-          </keep-alive>
+          <transition name="fade-transform" mode="out-in">
+            <keep-alive>
+              <component :is="Component" />
+            </keep-alive>
+          </transition>
         </router-view>
       </main>
     </div>
 
     <!-- 修改密码弹窗 -->
-    <el-dialog v-model="pwdDialogVisible" title="修改密码" width="400px" :close-on-click-modal="false">
-      <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-width="100px">
+    <el-dialog v-model="pwdDialogVisible" title="修改密码" width="420px" :close-on-click-modal="false">
+      <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-width="80px">
         <el-form-item label="原密码" prop="oldPassword">
-          <el-input v-model="pwdForm.oldPassword" type="password" show-password placeholder="请输入原密码" />
+          <el-input v-model="pwdForm.oldPassword" type="password" show-password placeholder="请输入原密码">
+            <template #prefix><el-icon><Lock /></el-icon></template>
+          </el-input>
         </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
-          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="请输入新密码" />
+          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="请输入新密码">
+            <template #prefix><el-icon><Key /></el-icon></template>
+          </el-input>
         </el-form-item>
         <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="再次输入新密码" />
+          <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="再次输入新密码">
+            <template #prefix><el-icon><Key /></el-icon></template>
+          </el-input>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="pwdDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="pwdLoading" @click="handleChangePassword">确认</el-button>
+        <el-button type="primary" :loading="pwdLoading" @click="handleChangePassword">确认修改</el-button>
       </template>
     </el-dialog>
   </div>
@@ -101,7 +126,6 @@ const currentRoute = computed(() => route)
 const menuRoutes = computed(() => {
   const mainRoute = router.options.routes.find(r => r.path === '/')
   const allRoutes = mainRoute?.children?.filter(r => !r.meta?.hidden) || []
-  // 操作员不显示：用户管理、分类管理、操作日志
   if (userStore.role !== 1) {
     return allRoutes.filter(r => !r.meta?.adminOnly)
   }
@@ -109,11 +133,8 @@ const menuRoutes = computed(() => {
 })
 
 const handleCommand = (cmd) => {
-  if (cmd === 'logout') {
-    handleLogout()
-  } else if (cmd === 'password') {
-    openPasswordDialog()
-  }
+  if (cmd === 'logout') handleLogout()
+  else if (cmd === 'password') openPasswordDialog()
 }
 
 const handleLogout = async () => {
@@ -122,7 +143,6 @@ const handleLogout = async () => {
   router.push('/login')
 }
 
-// 修改密码
 const pwdDialogVisible = ref(false)
 const pwdFormRef = ref()
 const pwdLoading = ref(false)
@@ -136,16 +156,10 @@ const pwdRules = {
   ],
   confirmPassword: [
     { required: true, message: '请确认新密码', trigger: 'blur' },
-    {
-      validator: (rule, value, callback) => {
-        if (value !== pwdForm.newPassword) {
-          callback(new Error('两次输入的密码不一致'))
-        } else {
-          callback()
-        }
-      },
-      trigger: 'blur'
-    }
+    { validator: (rule, value, callback) => {
+      if (value !== pwdForm.newPassword) callback(new Error('两次输入的密码不一致'))
+      else callback()
+    }, trigger: 'blur' }
   ]
 }
 
@@ -163,9 +177,7 @@ const handleChangePassword = async () => {
     pwdDialogVisible.value = false
     await userStore.logout()
     router.push('/login')
-  } catch (e) { /* handled */ } finally {
-    pwdLoading.value = false
-  }
+  } catch (e) { /* handled */ } finally { pwdLoading.value = false }
 }
 </script>
 
@@ -176,11 +188,14 @@ const handleChangePassword = async () => {
   overflow: hidden;
 }
 
+/* ---- 侧边栏 ---- */
 .sidebar {
   width: 220px;
-  background: #304156;
-  transition: width 0.3s;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 
   &.collapsed {
     width: 64px;
@@ -188,64 +203,124 @@ const handleChangePassword = async () => {
 }
 
 .sidebar-logo {
-  height: 50px;
+  height: 56px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 15px;
-  font-weight: 600;
-  color: #fff;
-  white-space: nowrap;
-  letter-spacing: 1px;
-}
+  padding: 0 16px;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 
-.sidebar-menu {
-  border-right: none;
-  height: calc(100vh - 50px);
-  overflow-y: auto;
-  background: #304156;
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #4361ee 0%, #6366f1 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
 
-  :deep(.el-menu-item) {
-    color: #bfcbd9;
-    &:hover, &.is-active {
-      background: #263445;
-      color: #409eff;
-    }
+  .logo-text {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f1f5f9;
+    white-space: nowrap;
+    letter-spacing: 1px;
   }
 }
 
+.sidebar-menu {
+  flex: 1;
+  border-right: none;
+  overflow-y: auto;
+  background: transparent;
+  padding: 8px;
+
+  :deep(.el-menu-item) {
+    color: #94a3b8;
+    border-radius: 8px;
+    margin-bottom: 2px;
+    height: 44px;
+    line-height: 44px;
+    transition: all 0.2s;
+
+    .el-icon {
+      font-size: 18px;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #e2e8f0;
+    }
+
+    &.is-active {
+      background: linear-gradient(135deg, #4361ee 0%, #6366f1 100%);
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(67, 97, 238, 0.35);
+    }
+  }
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+}
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: #475569;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ---- 主内容区 ---- */
 .main-container {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--bg-page);
 }
 
 .navbar {
-  height: 50px;
+  height: 56px;
   background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  padding: 0 24px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .navbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .collapse-btn {
   font-size: 20px;
   cursor: pointer;
-  color: #606266;
+  color: var(--text-secondary);
+  padding: 4px;
+  border-radius: 6px;
+  transition: var(--transition);
 
   &:hover {
-    color: #409eff;
+    color: var(--primary);
+    background: var(--primary-bg);
   }
 }
 
@@ -257,13 +332,50 @@ const handleChangePassword = async () => {
 
 .username {
   font-size: 14px;
-  color: #606266;
+  color: var(--text-regular);
+  font-weight: 500;
+}
+
+.user-avatar {
+  cursor: pointer;
+  background: linear-gradient(135deg, #4361ee 0%, #6366f1 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  transition: var(--transition);
+
+  &:hover {
+    transform: scale(1.08);
+    box-shadow: 0 2px 8px rgba(67, 97, 238, 0.4);
+  }
 }
 
 .app-main {
   flex: 1;
   overflow-y: auto;
-  background: #f0f2f5;
   padding: 0;
+}
+
+/* ---- 过渡动画 ---- */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-transform-enter-active,
+.fade-transform-leave-active {
+  transition: all 0.2s ease;
+}
+.fade-transform-enter-from {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+.fade-transform-leave-to {
+  opacity: 0;
+  transform: translateX(8px);
 }
 </style>
