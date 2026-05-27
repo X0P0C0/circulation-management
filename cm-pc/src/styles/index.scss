@@ -54,14 +54,11 @@
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 全局重置 */
-* {
+/* 全局重置 - 仅重置根元素，不破坏组件库内部样式 */
+html, body, #app {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-}
-
-html, body, #app {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;

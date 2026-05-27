@@ -1,7 +1,7 @@
 <template>
   <div class="home-page">
+    <!-- 顶部区域 -->
     <div class="home-header">
-      <div class="header-bg"></div>
       <div class="header-content">
         <h2>配件流转管理</h2>
         <p>欢迎回来，{{ userStore.realName || userStore.username }}</p>
@@ -9,30 +9,59 @@
     </div>
 
     <div class="home-body">
-      <div class="section-title">业务操作</div>
-      <van-grid :column-num="2" :gutter="12" class="action-grid">
-        <van-grid-item icon="scan" text="配件入库" class="action-item action-item--primary"
-          @click="router.push('/scan/inbound')" />
-        <van-grid-item icon="upgrade" text="配件领用" class="action-item action-item--success"
-          @click="router.push('/scan/transfer-out')" />
-        <van-grid-item icon="back-top" text="配件归还" class="action-item action-item--warning"
-          @click="router.push('/scan/transfer-in')" />
-        <van-grid-item icon="shopping-cart-o" text="配件售卖" class="action-item action-item--danger"
-          @click="router.push('/scan/sell')" />
-      </van-grid>
+      <!-- 业务操作 -->
+      <div class="section">
+        <div class="section-title">业务操作</div>
+        <div class="grid-2">
+          <div class="menu-card menu-card--primary" @click="router.push('/scan/inbound')">
+            <van-icon name="scan" size="28" />
+            <span>配件入库</span>
+          </div>
+          <div class="menu-card menu-card--success" @click="router.push('/scan/transfer-out')">
+            <van-icon name="upgrade" size="28" />
+            <span>配件领用</span>
+          </div>
+          <div class="menu-card menu-card--warning" @click="router.push('/scan/transfer-in')">
+            <van-icon name="back-top" size="28" />
+            <span>配件归还</span>
+          </div>
+          <div class="menu-card menu-card--danger" @click="router.push('/scan/sell')">
+            <van-icon name="shopping-cart-o" size="28" />
+            <span>配件售卖</span>
+          </div>
+        </div>
+      </div>
 
-      <div class="section-title" style="margin-top: 20px">查询功能</div>
-      <van-cell-group inset class="query-group">
-        <van-cell title="条码追溯" label="查询配件全流程记录" is-link @click="router.push('/trace')">
-          <template #icon><van-icon name="search" class="cell-icon cell-icon--primary" /></template>
-        </van-cell>
-        <van-cell title="总库存查询" label="查看全部配件库存" is-link @click="router.push('/inventory')">
-          <template #icon><van-icon name="orders-o" class="cell-icon cell-icon--success" /></template>
-        </van-cell>
-        <van-cell title="操作记录" label="查看历史流转记录" is-link @click="router.push('/records')">
-          <template #icon><van-icon name="notes-o" class="cell-icon cell-icon--warning" /></template>
-        </van-cell>
-      </van-cell-group>
+      <!-- 查询功能 -->
+      <div class="section">
+        <div class="section-title">查询功能</div>
+        <div class="query-list">
+          <div class="query-item" @click="router.push('/trace')">
+            <van-icon name="search" size="20" class="qi-icon qi-icon--primary" />
+            <div class="qi-text">
+              <div class="qi-title">条码追溯</div>
+              <div class="qi-desc">查询配件全流程记录</div>
+            </div>
+            <van-icon name="arrow" size="16" color="#c8c9cc" />
+          </div>
+          <div class="query-item" @click="router.push('/inventory')">
+            <van-icon name="orders-o" size="20" class="qi-icon qi-icon--success" />
+            <div class="qi-text">
+              <div class="qi-title">总库存查询</div>
+              <div class="qi-desc">查看全部配件库存</div>
+            </div>
+            <van-icon name="arrow" size="16" color="#c8c9cc" />
+          </div>
+          <div class="query-item" @click="router.push('/records')">
+            <van-icon name="notes-o" size="20" class="qi-icon qi-icon--warning" />
+            <div class="qi-text">
+              <div class="qi-title">操作记录</div>
+              <div class="qi-desc">查看历史流转记录</div>
+            </div>
+            <van-icon name="arrow" size="16" color="#c8c9cc" />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -48,25 +77,14 @@ const userStore = useUserStore()
 <style scoped>
 .home-page {
   min-height: 100vh;
-  background: #f1f5f9;
+  background: #f5f7fa;
 }
 
+/* ---- 顶部 ---- */
 .home-header {
-  position: relative;
-  padding: 40px 20px 32px;
-  overflow: hidden;
-}
-
-.header-bg {
-  position: absolute;
-  inset: 0;
   background: linear-gradient(135deg, #4361ee 0%, #6366f1 100%);
+  padding: 36px 20px 44px;
   border-radius: 0 0 24px 24px;
-}
-
-.header-content {
-  position: relative;
-  z-index: 1;
 }
 
 .header-content h2 {
@@ -82,11 +100,15 @@ const userStore = useUserStore()
   margin: 0;
 }
 
+/* ---- 内容区 ---- */
 .home-body {
-  padding: 20px 16px;
-  margin-top: -12px;
+  padding: 0 16px 24px;
+  margin-top: -20px;
   position: relative;
-  z-index: 1;
+}
+
+.section {
+  margin-bottom: 20px;
 }
 
 .section-title {
@@ -94,29 +116,93 @@ const userStore = useUserStore()
   font-weight: 600;
   color: #1e293b;
   margin-bottom: 12px;
-  padding-left: 4px;
+  padding-left: 2px;
 }
 
-.action-grid {
-  margin-bottom: 4px;
+/* ---- 2列网格 ---- */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.action-item :deep(.van-grid-item__content) {
-  border-radius: 12px;
-  padding: 20px 12px;
+.menu-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s;
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.97);
+  }
 }
 
-.query-group {
-  border-radius: 12px;
+.menu-card--primary { color: #4361ee; }
+.menu-card--success { color: #22c55e; }
+.menu-card--warning { color: #f59e0b; }
+.menu-card--danger  { color: #ef4444; }
+
+/* ---- 查询列表 ---- */
+.query-list {
+  background: #fff;
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.cell-icon {
-  font-size: 20px;
-  margin-right: 8px;
+.query-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:active {
+    background: #f8fafc;
+  }
+
+  & + .query-item {
+    border-top: 1px solid #f1f5f9;
+  }
 }
 
-.cell-icon--primary { color: #4361ee; }
-.cell-icon--success { color: #22c55e; }
-.cell-icon--warning { color: #f59e0b; }
+.qi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.qi-icon--primary { background: #eef1ff; color: #4361ee; }
+.qi-icon--success { background: #ecfdf5; color: #22c55e; }
+.qi-icon--warning { background: #fffbeb; color: #f59e0b; }
+
+.qi-text {
+  flex: 1;
+}
+
+.qi-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.qi-desc {
+  font-size: 12px;
+  color: #94a3b8;
+}
 </style>

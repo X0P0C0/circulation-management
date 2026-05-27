@@ -1,4 +1,21 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body, #app { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f7f8fa; }
-.page-title { font-size: 18px; font-weight: 600; color: #323233; padding: 16px; }
-.page-content { padding: 0 16px 16px; }
+/* 全局样式 - 不影响Vant组件内部 */
+html, body, #app {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #f7f8fa;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #323233;
+  padding: 16px;
+}
+
+.page-content {
+  padding: 0 16px 16px;
+}
