@@ -5,14 +5,17 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cm.common.exception.BusinessException;
 import com.cm.dto.AccessoryInboundDTO;
 import com.cm.entity.Accessory;
+import com.cm.entity.FlowRecord;
 import com.cm.entity.Inventory;
+import com.cm.entity.Category;
+import com.cm.enums.FlowTypeEnum;
 import com.cm.mapper.AccessoryMapper;
+import com.cm.mapper.CategoryMapper;
+import com.cm.mapper.FlowRecordMapper;
 import com.cm.mapper.InventoryMapper;
 import com.cm.service.AccessoryService;
 import com.cm.service.OperationLogService;
 import com.cm.vo.AccessoryVO;
-import com.cm.entity.Category;
-import com.cm.mapper.CategoryMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
 
     private final InventoryMapper inventoryMapper;
     private final CategoryMapper categoryMapper;
+    private final FlowRecordMapper flowRecordMapper;
     private final OperationLogService operationLogService;
 
     @Override
@@ -32,7 +36,7 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
         Accessory existing = getOne(new LambdaQueryWrapper<Accessory>()
                 .eq(Accessory::getBarcode, dto.getBarcode()));
         if (existing != null) {
-            throw new BusinessException(409, "该条码已入库，配件名称：" + existing.getName());
+            throw new BusinessException(409, "Barcode already exists: " + existing.getName());
         }
 
         Accessory accessory = new Accessory();
@@ -45,7 +49,17 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
         inventory.setAvailableQty(1);
         inventoryMapper.insert(inventory);
 
-        operationLogService.log("INBOUND", "配件入库：" + dto.getName() + "（" + dto.getBarcode() + "）",
+        // Write flow record
+        FlowRecord record = new FlowRecord();
+        record.setAccessoryId(accessory.getId());
+        record.setBarcode(dto.getBarcode());
+        record.setAccessoryName(dto.getName());
+        record.setFlowType(FlowTypeEnum.INBOUND.getCode());
+        record.setQty(1);
+        record.setOperator(operator);
+        flowRecordMapper.insert(record);
+
+        operationLogService.log("INBOUND", "Inbound: " + dto.getName() + " (" + dto.getBarcode() + ")",
                 dto.getBarcode(), null, operator, null);
     }
 
@@ -54,7 +68,7 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
         Accessory accessory = getOne(new LambdaQueryWrapper<Accessory>()
                 .eq(Accessory::getBarcode, barcode));
         if (accessory == null) {
-            throw new BusinessException(404, "条码不存在");
+            throw new BusinessException(404, "Barcode not found");
         }
 
         Inventory inventory = inventoryMapper.selectOne(
