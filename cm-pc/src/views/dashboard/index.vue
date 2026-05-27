@@ -1,29 +1,49 @@
 <template>
   <div class="page-container">
-    <h2 class="page-title">首页概览</h2>
+    <h2 class="page-title">Dashboard</h2>
     <el-row :gutter="16">
       <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header><span>配件总数</span></template>
-          <div class="stat-value">{{ stats.totalAccessories || 0 }}</div>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-icon" style="background: #409eff15; color: #409eff">
+            <el-icon :size="28"><Box /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">Accessories</div>
+            <div class="stat-value">{{ stats.totalAccessories || 0 }}</div>
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header><span>配件分类</span></template>
-          <div class="stat-value">{{ stats.totalCategories || 0 }}</div>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-icon" style="background: #67c23a15; color: #67c23a">
+            <el-icon :size="28"><Menu /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">Categories</div>
+            <div class="stat-value">{{ stats.totalCategories || 0 }}</div>
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header><span>在库数量</span></template>
-          <div class="stat-value primary">{{ stats.availableQty || 0 }}</div>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-icon" style="background: #e6a23c15; color: #e6a23c">
+            <el-icon :size="28"><Checked /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">In Stock</div>
+            <div class="stat-value">{{ stats.availableQty || 0 }}</div>
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover">
-          <template #header><span>领用在途</span></template>
-          <div class="stat-value warning">{{ stats.outQty || 0 }}</div>
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-icon" style="background: #f56c6c15; color: #f56c6c">
+            <el-icon :size="28"><Upload /></el-icon>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">On Loan</div>
+            <div class="stat-value">{{ stats.outQty || 0 }}</div>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -31,23 +51,40 @@
     <el-row :gutter="16" style="margin-top: 16px">
       <el-col :span="12">
         <el-card>
-          <template #header><span>快捷操作</span></template>
+          <template #header><span>Quick Actions</span></template>
           <div class="quick-actions">
-            <el-button type="primary" @click="$router.push('/accessory/inbound')">配件入库</el-button>
-            <el-button type="success" @click="$router.push('/flow/transfer-out')">配件领用</el-button>
-            <el-button type="warning" @click="$router.push('/flow/transfer-in')">配件归还</el-button>
-            <el-button type="danger" @click="$router.push('/flow/sell')">配件售卖</el-button>
+            <el-button type="primary" size="large" @click="$router.push('/accessory/inbound')">
+              <el-icon><Download /></el-icon> Inbound
+            </el-button>
+            <el-button type="success" size="large" @click="$router.push('/flow/transfer-out')">
+              <el-icon><Upload /></el-icon> Transfer Out
+            </el-button>
+            <el-button type="warning" size="large" @click="$router.push('/flow/transfer-in')">
+              <el-icon><RefreshLeft /></el-icon> Return
+            </el-button>
+            <el-button type="danger" size="large" @click="$router.push('/flow/sell')">
+              <el-icon><ShoppingCart /></el-icon> Sell
+            </el-button>
           </div>
         </el-card>
       </el-col>
       <el-col :span="12">
         <el-card>
-          <template #header><span>系统信息</span></template>
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="系统名称">配件流转管理系统</el-descriptions-item>
-            <el-descriptions-item label="版本">V1.0.0</el-descriptions-item>
-            <el-descriptions-item label="技术栈">Spring Boot + Vue3 + Element Plus</el-descriptions-item>
-          </el-descriptions>
+          <template #header><span>Quick Query</span></template>
+          <div class="quick-actions">
+            <el-button size="large" @click="$router.push('/flow/trace')">
+              <el-icon><Search /></el-icon> Barcode Trace
+            </el-button>
+            <el-button size="large" @click="$router.push('/inventory/total')">
+              <el-icon><Box /></el-icon> Inventory
+            </el-button>
+            <el-button size="large" @click="$router.push('/worker')">
+              <el-icon><User /></el-icon> Workers
+            </el-button>
+            <el-button size="large" @click="$router.push('/log')">
+              <el-icon><Document /></el-icon> Logs
+            </el-button>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -69,14 +106,31 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.stat-card :deep(.el-card__body) {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+}
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.stat-label {
+  font-size: 13px;
+  color: #909399;
+  margin-bottom: 4px;
+}
 .stat-value {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 600;
-  text-align: center;
   color: #303133;
 }
-.stat-value.primary { color: #409eff; }
-.stat-value.warning { color: #e6a23c; }
 .quick-actions {
   display: flex;
   gap: 12px;

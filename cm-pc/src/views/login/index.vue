@@ -1,18 +1,24 @@
 <template>
   <div class="login-container">
     <div class="login-card">
-      <h2 class="login-title">配件流转管理系统</h2>
+      <div class="login-header">
+        <div class="logo-icon">
+          <el-icon :size="36" color="#409eff"><Box /></el-icon>
+        </div>
+        <h2>CM System</h2>
+        <p>Circulation Management</p>
+      </div>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="0" size="large">
         <el-form-item prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" prefix-icon="User" />
+          <el-input v-model="form.username" placeholder="Username" prefix-icon="User" />
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码"
+          <el-input v-model="form.password" type="password" placeholder="Password"
             prefix-icon="Lock" show-password @keyup.enter="handleLogin" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="loading" style="width:100%" @click="handleLogin">
-            登 录
+            Login
           </el-button>
         </el-form-item>
       </el-form>
@@ -32,8 +38,8 @@ const formRef = ref()
 const loading = ref(false)
 const form = reactive({ username: '', password: '' })
 const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  username: [{ required: true, message: 'Please enter username', trigger: 'blur' }],
+  password: [{ required: true, message: 'Please enter password', trigger: 'blur' }]
 }
 
 const handleLogin = async () => {
@@ -41,11 +47,9 @@ const handleLogin = async () => {
   loading.value = true
   try {
     await userStore.login(form)
-    ElMessage.success('登录成功')
+    ElMessage.success('Login success')
     router.push('/')
-  } catch (e) {
-    // error handled by interceptor
-  } finally {
+  } catch (e) { /* handled */ } finally {
     loading.value = false
   }
 }
@@ -64,14 +68,28 @@ const handleLogin = async () => {
   width: 400px;
   padding: 40px;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
-.login-title {
+.login-header {
   text-align: center;
   margin-bottom: 32px;
-  font-size: 22px;
-  color: #303133;
+
+  .logo-icon {
+    margin-bottom: 12px;
+  }
+
+  h2 {
+    font-size: 24px;
+    color: #303133;
+    margin: 0 0 4px;
+  }
+
+  p {
+    font-size: 14px;
+    color: #909399;
+    margin: 0;
+  }
 }
 </style>
