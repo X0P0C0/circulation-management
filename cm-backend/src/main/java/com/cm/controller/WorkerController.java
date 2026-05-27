@@ -3,7 +3,9 @@ package com.cm.controller;
 import com.cm.common.result.PageResult;
 import com.cm.common.result.Result;
 import com.cm.dto.WorkerDTO;
+import com.cm.service.InventoryService;
 import com.cm.service.WorkerService;
+import com.cm.vo.InventoryVO;
 import com.cm.vo.WorkerVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ import java.util.List;
 public class WorkerController {
 
     private final WorkerService workerService;
+    private final InventoryService inventoryService;
 
     @PostMapping
     public Result<Void> create(@Valid @RequestBody WorkerDTO dto) {
@@ -46,5 +49,10 @@ public class WorkerController {
     @GetMapping("/all")
     public Result<List<WorkerVO>> listAll() {
         return Result.success(workerService.listAll());
+    }
+
+    @GetMapping("/{id}/inventory")
+    public Result<List<?>> workerInventory(@PathVariable Long id) {
+        return Result.success(inventoryService.getWorkerInventory(id));
     }
 }

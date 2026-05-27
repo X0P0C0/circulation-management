@@ -21,6 +21,7 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
 
     private final AccessoryMapper accessoryMapper;
     private final CategoryMapper categoryMapper;
+    private final InventoryOwnerMapper inventoryOwnerMapper;
 
     @Override
     public PageResult<InventoryVO> listPage(Long categoryId, String keyword, Integer pageNum, Integer pageSize) {
@@ -82,5 +83,31 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
         stats.put("availableQty", availableQty);
         stats.put("outQty", totalQty - availableQty);
         return stats;
+    }
+
+    @Override
+    public List<InventoryVO> getWorkerInventory(Long workerId) {
+        List<InventoryOwner> owners = inventoryOwnerMapper.selectList(
+                new LambdaQueryWrapper<InventoryOwner>()
+                        .eq(InventoryOwner::getWorkerId, workerId)
+                        .gt(InventoryOwner::getQty, 0));
+
+        return owners.stream().map(owner -> {
+            Accessory acc = accessoryMapper.selectById(owner.getAccessoryId());
+            InventoryVO vo = new InventoryVO();
+            vo.setAccessoryId(owner.getAccessoryId());
+            if (acc != null) {
+                vo.setBarcode(acc.getBarcode());
+                vo.setAccessoryName(acc.getName());
+                vo.setSpec(acc.getSpec());
+                vo.setUnit(acc.getUnit());
+                if (acc.getCategoryId() != null) {
+                    Category cat = categoryMapper.selectById(acc.getCategoryId());
+                    vo.setCategoryName(cat != null ? cat.getName() : "");
+                }
+            }
+            vo.setAvailableQty(owner.getQty());
+            return vo;
+        }).collect(Collectors.toList());
     }
 }

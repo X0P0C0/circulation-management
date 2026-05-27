@@ -9,16 +9,17 @@ const routes = [
     component: () => import('@/layout/index.vue'),
     redirect: '/home',
     children: [
-      { path: 'home', name: 'Home', component: () => import('@/views/home/index.vue'), meta: { title: '首页' } },
-      { path: 'inventory', name: 'Inventory', component: () => import('@/views/inventory/index.vue'), meta: { title: '库存' } },
-      { path: 'mine', name: 'Mine', component: () => import('@/views/mine/index.vue'), meta: { title: '我的' } }
+      { path: 'home', name: 'Home', component: () => import('@/views/home/index.vue'), meta: { title: 'Home' } },
+      { path: 'inventory', name: 'Inventory', component: () => import('@/views/inventory/index.vue'), meta: { title: 'Inventory' } },
+      { path: 'mine', name: 'Mine', component: () => import('@/views/mine/index.vue'), meta: { title: 'My' } }
     ]
   },
   { path: '/scan/inbound', name: 'ScanInbound', component: () => import('@/views/scan/inbound.vue') },
   { path: '/scan/transfer-out', name: 'ScanTransferOut', component: () => import('@/views/scan/transfer-out.vue') },
   { path: '/scan/transfer-in', name: 'ScanTransferIn', component: () => import('@/views/scan/transfer-in.vue') },
   { path: '/scan/sell', name: 'ScanSell', component: () => import('@/views/scan/sell.vue') },
-  { path: '/trace', name: 'Trace', component: () => import('@/views/trace/index.vue') }
+  { path: '/trace', name: 'Trace', component: () => import('@/views/trace/index.vue') },
+  { path: '/records', name: 'Records', component: () => import('@/views/records/index.vue') }
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })

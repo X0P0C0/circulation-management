@@ -19,3 +19,7 @@ export function updateWorker(id, data) {
 export function deleteWorker(id) {
   return request.delete('/api/workers/' + id)
 }
+
+export function getWorkerInventory(id) {
+  return request.get('/api/workers/' + id + '/inventory')
+}
