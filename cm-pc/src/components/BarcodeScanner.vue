@@ -30,7 +30,7 @@
 import { ref, watch } from 'vue'
 import { Camera, CircleCheckFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import Quagga from '@ericblade/quagga2'
+import { Html5Qrcode } from 'html5-qrcode'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -61,8 +61,20 @@ const handleFileChange = async (file) => {
   if (!file || !file.raw) return
   scanning.value = true
   scanResult.value = ''
+
   try {
-    const result = await recognizeBarcode(file.raw)
+    // 创建隐藏的html元素供html5-qrcode使用
+    let tempDiv = document.getElementById('qr-scanner-temp')
+    if (!tempDiv) {
+      tempDiv = document.createElement('div')
+      tempDiv.id = 'qr-scanner-temp'
+      tempDiv.style.display = 'none'
+      document.body.appendChild(tempDiv)
+    }
+
+    const qr = new Html5Qrcode('qr-scanner-temp')
+    const result = await qr.scanFile(file.raw, true)
+
     if (result) {
       inputValue.value = result
       scanResult.value = '识别成功：' + result
@@ -71,37 +83,12 @@ const handleFileChange = async (file) => {
       ElMessage.warning('未能识别到条码，请尝试更清晰的图片或手动输入')
     }
   } catch (e) {
-    ElMessage.warning('条码识别失败，请手动输入')
+    console.error('条码识别失败:', e)
+    ElMessage.warning('未能识别到条码，请尝试更清晰的图片或手动输入')
   } finally {
     scanning.value = false
     if (uploadRef.value) uploadRef.value.clearFiles()
   }
-}
-
-function recognizeBarcode(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      Quagga.decodeSingle({
-        src: e.target.result,
-        numOfWorkers: 0,
-        inputStream: { size: 800 },
-        decoder: {
-          readers: [
-            'code_128_reader', 'ean_reader', 'ean_8_reader',
-            'code_39_reader', 'code_93_reader', 'upc_reader',
-            'upc_e_reader', 'codabar_reader', 'i2of5_reader'
-          ]
-        },
-        locate: true,
-        locator: { halfSample: true, patchSize: 'medium' }
-      }, (result) => {
-        resolve(result?.codeResult?.code || null)
-      })
-    }
-    reader.onerror = () => resolve(null)
-    reader.readAsDataURL(file)
-  })
 }
 </script>
 
