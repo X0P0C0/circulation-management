@@ -1,4 +1,4 @@
-﻿import axios from 'axios'
+import axios from 'axios'
 import { getToken, removeToken } from './auth'
 import { showToast } from 'vant'
 import router from '@/router'
@@ -10,7 +10,7 @@ const service = axios.create({
 
 service.interceptors.request.use((config) => {
   const token = getToken()
-  if (token) config.headers.Authorization = Bearer 
+  if (token) config.headers.Authorization = 'Bearer ' + token
   return config
 })
 

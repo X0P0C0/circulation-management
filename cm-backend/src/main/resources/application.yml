@@ -1,4 +1,4 @@
-﻿server:
+server:
   port: 8080
 
 spring:
@@ -19,3 +19,7 @@ mybatis-plus:
       logic-delete-field: status
       logic-delete-value: 0
       logic-not-delete-value: 1
+
+jwt:
+  secret: default-secret-key-please-change-in-application-dev-yml-min-256-bits-ok
+  expiration: 86400000

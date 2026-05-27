@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="page-container">
     <div class="page-header"><h2 class="page-title">条码追溯</h2></div>
     <el-card>

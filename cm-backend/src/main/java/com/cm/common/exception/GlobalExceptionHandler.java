@@ -1,4 +1,4 @@
-﻿package com.cm.common.exception;
+package com.cm.common.exception;
 
 import com.cm.common.result.Result;
 import lombok.extern.slf4j.Slf4j;

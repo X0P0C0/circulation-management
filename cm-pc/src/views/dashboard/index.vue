@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="page-container">
     <h2 class="page-title">首页概览</h2>
     <el-row :gutter="16">

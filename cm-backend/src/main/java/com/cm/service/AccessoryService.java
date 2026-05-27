@@ -1,4 +1,4 @@
-﻿package com.cm.service;
+package com.cm.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.cm.dto.AccessoryInboundDTO;

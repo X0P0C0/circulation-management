@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="page-container">
     <div class="page-header">
       <h2 class="page-title">配件入库</h2>

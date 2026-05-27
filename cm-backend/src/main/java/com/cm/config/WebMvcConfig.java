@@ -1,4 +1,4 @@
-﻿package com.cm.config;
+package com.cm.config;
 
 import com.cm.interceptor.JwtAuthInterceptor;
 import lombok.RequiredArgsConstructor;

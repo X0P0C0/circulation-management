@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="app-layout">
     <aside class="sidebar" :class="{ collapsed: isCollapsed }">
       <div class="sidebar-logo">

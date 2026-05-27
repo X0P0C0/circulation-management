@@ -1,4 +1,4 @@
-﻿import axios from 'axios'
+import axios from 'axios'
 import { getToken, removeToken } from './auth'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
@@ -11,7 +11,7 @@ const service = axios.create({
 service.interceptors.request.use((config) => {
   const token = getToken()
   if (token) {
-    config.headers.Authorization = Bearer 
+    config.headers.Authorization = 'Bearer ' + token
   }
   return config
 })

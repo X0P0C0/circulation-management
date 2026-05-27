@@ -1,4 +1,4 @@
-﻿const TOKEN_KEY = 'cm_token'
+const TOKEN_KEY = 'cm_token'
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY)

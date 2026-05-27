@@ -1,4 +1,4 @@
-﻿import request from '@/utils/request'
+import request from '@/utils/request'
 
 export function transferOut(data) {
   return request.post('/api/flows/transfer-out', data)
@@ -13,7 +13,7 @@ export function sellAccessory(data) {
 }
 
 export function traceBarcode(barcode) {
-  return request.get(/api/flows/trace/)
+  return request.get('/api/flows/trace/' + barcode)
 }
 
 export function getFlowRecords(params) {
@@ -21,5 +21,5 @@ export function getFlowRecords(params) {
 }
 
 export function getWorkerRecords(workerId) {
-  return request.get(/api/flows/workers//records)
+  return request.get('/api/flows/workers/' + workerId + '/records')
 }

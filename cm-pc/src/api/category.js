@@ -1,4 +1,4 @@
-﻿import request from '@/utils/request'
+import request from '@/utils/request'
 
 export function getCategories() {
   return request.get('/api/categories')
@@ -9,9 +9,9 @@ export function createCategory(data) {
 }
 
 export function updateCategory(id, data) {
-  return request.put(/api/categories/, data)
+  return request.put('/api/categories/' + id, data)
 }
 
 export function deleteCategory(id) {
-  return request.delete(/api/categories/)
+  return request.delete('/api/categories/' + id)
 }

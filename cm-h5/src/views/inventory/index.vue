@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <van-nav-bar title="库存查询" />
     <van-search v-model="keyword" placeholder="搜索配件名称/条码" @search="loadData" />

@@ -1,4 +1,4 @@
-﻿package com.cm.vo;
+package com.cm.vo;
 
 import lombok.Data;
 import java.util.List;

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="page-container">
     <div class="page-header"><h2 class="page-title">操作日志</h2></div>
     <el-card>

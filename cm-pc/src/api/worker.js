@@ -1,4 +1,4 @@
-﻿import request from '@/utils/request'
+import request from '@/utils/request'
 
 export function getWorkers(params) {
   return request.get('/api/workers', { params })
@@ -13,9 +13,9 @@ export function createWorker(data) {
 }
 
 export function updateWorker(id, data) {
-  return request.put(/api/workers/, data)
+  return request.put('/api/workers/' + id, data)
 }
 
 export function deleteWorker(id) {
-  return request.delete(/api/workers/)
+  return request.delete('/api/workers/' + id)
 }

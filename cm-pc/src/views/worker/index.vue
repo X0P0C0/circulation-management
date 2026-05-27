@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="page-container">
     <div class="page-header">
       <h2 class="page-title">师傅管理</h2>
@@ -10,7 +10,6 @@
           @keyup.enter="loadData" />
         <el-button type="primary" @click="loadData" style="margin-left: 12px">查询</el-button>
       </div>
-
       <el-table :data="list" stripe border v-loading="loading">
         <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="name" label="姓名" />
@@ -25,16 +24,13 @@
           </template>
         </el-table-column>
       </el-table>
-
       <div class="pagination-wrapper">
         <el-pagination v-model:current-page="pageNum" v-model:page-size="pageSize"
           :total="total" :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next, jumper" @change="loadData" />
       </div>
     </el-card>
-
-    <el-dialog v-model="dialogVisible" :title="editId ? '编辑师傅' : '新增师傅'" width="500px"
-      :close-on-click-modal="false">
+    <el-dialog v-model="dialogVisible" :title="editId ? '编辑师傅' : '新增师傅'" width="500px" :close-on-click-modal="false">
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
         <el-form-item label="姓名" prop="name">
           <el-input v-model="form.name" placeholder="请输入师傅姓名" />
@@ -54,7 +50,6 @@
         <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
-
     <el-drawer v-model="drawerVisible" title="师傅领用记录" size="600px">
       <el-table :data="records" stripe border>
         <el-table-column prop="barcode" label="条码" width="180" />
@@ -84,14 +79,12 @@ const keyword = ref('')
 const pageNum = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-
 const dialogVisible = ref(false)
 const editId = ref(null)
 const formRef = ref()
 const submitting = ref(false)
 const form = reactive({ name: '', jobNo: '', phone: '', remark: '' })
 const formRules = { name: [{ required: true, message: '请输入姓名', trigger: 'blur' }] }
-
 const drawerVisible = ref(false)
 const records = ref([])
 
@@ -114,11 +107,8 @@ const handleSubmit = async () => {
   await formRef.value.validate()
   submitting.value = true
   try {
-    if (editId.value) {
-      await updateWorker(editId.value, form)
-    } else {
-      await createWorker(form)
-    }
+    if (editId.value) { await updateWorker(editId.value, form) }
+    else { await createWorker(form) }
     ElMessage.success(editId.value ? '编辑成功' : '新增成功')
     dialogVisible.value = false
     loadData()
@@ -126,7 +116,7 @@ const handleSubmit = async () => {
 }
 
 const handleDelete = async (row) => {
-  await ElMessageBox.confirm(确认删除师傅「」？, '提示', { type: 'warning' })
+  await ElMessageBox.confirm('确认删除师傅 "' + row.name + '" ？', '提示', { type: 'warning' })
   try {
     await deleteWorker(row.id)
     ElMessage.success('删除成功')

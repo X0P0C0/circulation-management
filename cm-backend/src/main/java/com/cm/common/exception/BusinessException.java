@@ -1,4 +1,4 @@
-﻿package com.cm.common.exception;
+package com.cm.common.exception;
 
 import lombok.Getter;
 

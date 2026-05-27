@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <van-nav-bar title="我的" />
     <van-cell-group inset style="margin-top: 12px">

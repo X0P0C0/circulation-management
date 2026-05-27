@@ -1,4 +1,4 @@
-﻿package com.cm.util;
+package com.cm.util;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -11,10 +11,10 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    @Value("")
+    @Value("${jwt.secret}")
     private String secret;
 
-    @Value("")
+    @Value("${jwt.expiration}")
     private long expiration;
 
     private SecretKey getKey() {

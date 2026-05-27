@@ -1,4 +1,4 @@
-﻿package com.cm.config;
+package com.cm.config;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.cm.entity.User;

@@ -1,4 +1,4 @@
-﻿package com.cm;
+package com.cm;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;

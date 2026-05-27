@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="page-container">
     <div class="page-header">
       <h2 class="page-title">分类管理</h2>
@@ -18,9 +18,7 @@
         </el-table-column>
       </el-table>
     </el-card>
-
-    <el-dialog v-model="dialogVisible" :title="editId ? '编辑分类' : '新增分类'" width="450px"
-      :close-on-click-modal="false">
+    <el-dialog v-model="dialogVisible" :title="editId ? '编辑分类' : '新增分类'" width="450px" :close-on-click-modal="false">
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
         <el-form-item label="名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入分类名称" />
@@ -72,11 +70,8 @@ const handleSubmit = async () => {
   await formRef.value.validate()
   submitting.value = true
   try {
-    if (editId.value) {
-      await updateCategory(editId.value, form)
-    } else {
-      await createCategory(form)
-    }
+    if (editId.value) { await updateCategory(editId.value, form) }
+    else { await createCategory(form) }
     ElMessage.success(editId.value ? '编辑成功' : '新增成功')
     dialogVisible.value = false
     loadData()
@@ -84,7 +79,7 @@ const handleSubmit = async () => {
 }
 
 const handleDelete = async (row) => {
-  await ElMessageBox.confirm(确认删除分类「」？, '提示', { type: 'warning' })
+  await ElMessageBox.confirm('确认删除分类 "' + row.name + '" ？', '提示', { type: 'warning' })
   try {
     await deleteCategory(row.id)
     ElMessage.success('删除成功')

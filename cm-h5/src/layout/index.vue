@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="app-layout">
     <router-view />
     <van-tabbar v-model="active" route>

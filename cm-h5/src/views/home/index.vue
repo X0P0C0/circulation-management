@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <van-nav-bar title="配件流转管理" />
     <div style="padding: 16px">

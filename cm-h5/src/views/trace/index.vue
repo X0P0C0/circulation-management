@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <van-nav-bar title="条码追溯" left-arrow @click-left="router.back()" />
     <van-search v-model="barcode" placeholder="输入条码查询" show-action @search="handleTrace">

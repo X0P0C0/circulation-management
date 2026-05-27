@@ -1,4 +1,4 @@
-﻿package com.cm.controller;
+package com.cm.controller;
 
 import com.cm.common.constant.Constants;
 import com.cm.common.result.PageResult;

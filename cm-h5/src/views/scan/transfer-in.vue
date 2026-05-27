@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <van-nav-bar title="配件归还" left-arrow @click-left="router.back()" />
     <van-cell-group inset title="选择师傅" style="margin-top: 12px">

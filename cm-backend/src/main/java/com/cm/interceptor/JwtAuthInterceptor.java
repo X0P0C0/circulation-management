@@ -1,4 +1,4 @@
-﻿package com.cm.interceptor;
+package com.cm.interceptor;
 
 import com.cm.common.constant.Constants;
 import com.cm.util.JwtUtil;

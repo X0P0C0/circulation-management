@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <van-nav-bar title="配件售卖" left-arrow @click-left="router.back()" />
     <van-form @submit="handleSubmit">

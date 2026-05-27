@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="login-container">
     <div class="login-card">
       <h2 class="login-title">配件流转管理系统</h2>

@@ -1,4 +1,4 @@
-﻿package com.cm.config;
+package com.cm.config;
 
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
