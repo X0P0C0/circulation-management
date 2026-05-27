@@ -4,7 +4,7 @@
       <h2 class="page-title">配件领用</h2>
     </div>
     <el-card>
-      <el-form label-width="100px" style="max-width: 750px">
+      <el-form label-width="110px" style="max-width: 750px">
         <el-form-item label="选择师傅" required>
           <el-select v-model="workerId" placeholder="请选择领用师傅" filterable style="width: 100%">
             <el-option v-for="w in workerList" :key="w.id" :label="w.name" :value="w.id" />

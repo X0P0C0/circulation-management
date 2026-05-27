@@ -221,3 +221,14 @@ html, body, #app {
 .mt-sm { margin-top: var(--spacing-sm); }
 .mt-md { margin-top: var(--spacing-md); }
 .mt-lg { margin-top: var(--spacing-lg); }
+/* ---- 表单标签修复 ---- */
+.el-form-item__label {
+  position: relative;
+  z-index: 1;
+  padding-right: 12px;
+}
+
+.el-form-item__content {
+  flex: 1;
+  min-width: 0;
+}

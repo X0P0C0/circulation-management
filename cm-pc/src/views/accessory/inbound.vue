@@ -4,7 +4,7 @@
       <h2 class="page-title">配件入库</h2>
     </div>
     <el-card>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" style="max-width: 650px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px" class="inbound-form">
         <el-form-item label="条码" prop="barcode">
           <BarcodeScanner v-model="form.barcode" @scanned="onBarcodeScanned" />
         </el-form-item>
@@ -83,7 +83,31 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-container { padding: 20px; }
-.page-header { margin-bottom: 16px; }
-.page-title { margin: 0; font-size: 18px; }
+.page-container {
+  padding: 24px;
+}
+
+.page-header {
+  margin-bottom: 20px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.inbound-form {
+  max-width: 700px;
+}
+
+.inbound-form :deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+
+.inbound-form :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #475569;
+}
 </style>

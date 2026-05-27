@@ -4,7 +4,7 @@
       <h2 class="page-title">配件售卖</h2>
     </div>
     <el-card>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" style="max-width: 650px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px" style="max-width: 650px">
         <el-form-item label="条码" prop="barcode">
           <BarcodeScanner v-model="form.barcode" placeholder="输入或识别条码" @scanned="onBarcodeScanned" />
         </el-form-item>
