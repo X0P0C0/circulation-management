@@ -27,14 +27,14 @@ const routes = [
         meta: { title: '配件入库', icon: 'Download' }
       },
       {
-        path: 'flow/transfer-out',
-        name: 'TransferOut',
+        path: 'flow/outbound',
+        name: 'FlowOutbound',
         component: () => import('@/views/flow/transfer-out.vue'),
-        meta: { title: '配件领用', icon: 'Upload' }
+        meta: { title: '配件出库', icon: 'Upload' }
       },
       {
-        path: 'flow/transfer-in',
-        name: 'TransferIn',
+        path: 'flow/return',
+        name: 'FlowReturn',
         component: () => import('@/views/flow/transfer-in.vue'),
         meta: { title: '配件归还', icon: 'RefreshLeft' }
       },
@@ -45,16 +45,28 @@ const routes = [
         meta: { title: '配件售卖', icon: 'ShoppingCart' }
       },
       {
-        path: 'inventory/total',
-        name: 'InventoryTotal',
-        component: () => import('@/views/inventory/total.vue'),
-        meta: { title: '总库存', icon: 'Box' }
+        path: 'flow/transfer',
+        name: 'FlowTransfer',
+        component: () => import('@/views/flow/transfer.vue'),
+        meta: { title: '库存转移', icon: 'Sort' }
+      },
+      {
+        path: 'inventory/master',
+        name: 'InventoryMaster',
+        component: () => import('@/views/inventory/master.vue'),
+        meta: { title: '总库', icon: 'Box' }
+      },
+      {
+        path: 'inventory/available',
+        name: 'InventoryAvailable',
+        component: () => import('@/views/inventory/available.vue'),
+        meta: { title: '可支配库存', icon: 'Goods' }
       },
       {
         path: 'flow/trace',
         name: 'FlowTrace',
         component: () => import('@/views/flow/trace.vue'),
-        meta: { title: '条码追溯', icon: 'Search' }
+        meta: { title: '工件追溯', icon: 'Search' }
       },
       {
         path: 'worker',
@@ -94,27 +106,19 @@ let hasFetchedUserInfo = false
 router.beforeEach(async (to, from, next) => {
   const token = getToken()
   if (to.path === '/login') {
-    if (token) {
-      next('/')
-    } else {
-      next()
-    }
+    if (token) next('/')
+    else next()
     return
   }
-
   if (!token) {
     next('/login')
     return
   }
-
-  // 首次导航时获取用户信息
   if (!hasFetchedUserInfo) {
     const userStore = useUserStore()
     await userStore.fetchUserInfo()
     hasFetchedUserInfo = true
   }
-
-  // 管理员专属页面权限校验
   if (to.meta?.adminOnly) {
     const userStore = useUserStore()
     if (userStore.role !== 1) {
@@ -122,7 +126,6 @@ router.beforeEach(async (to, from, next) => {
       return
     }
   }
-
   next()
 })
 

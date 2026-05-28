@@ -4,88 +4,91 @@
       <h2 class="page-title">配件售卖</h2>
     </div>
     <el-card>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px" style="max-width: 650px">
-        <el-form-item label="条码" prop="barcode">
-          <BarcodeScanner v-model="form.barcode" placeholder="输入或识别条码" @scanned="onBarcodeScanned" />
+      <el-form label-width="100px" class="sell-form">
+        <el-form-item label="选择工件">
+          <el-button type="primary" @click="openPicker">添加工件</el-button>
         </el-form-item>
-        <el-form-item v-if="accessoryInfo" label="配件信息">
-          <el-descriptions :column="2" border size="small" style="width: 100%">
-            <el-descriptions-item label="名称">{{ accessoryInfo.name }}</el-descriptions-item>
-            <el-descriptions-item label="规格">{{ accessoryInfo.spec || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="分类">{{ accessoryInfo.categoryName || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="可用库存">
-              <el-tag :type="accessoryInfo.availableQty > 0 ? 'success' : 'danger'" size="small">
-                {{ accessoryInfo.availableQty }}
-              </el-tag>
-            </el-descriptions-item>
-          </el-descriptions>
+        <el-form-item v-if="selectedItems.length" label="售卖清单">
+          <el-table :data="selectedItems" stripe border style="width: 100%">
+            <el-table-column type="index" label="序号" width="60" align="center" />
+            <el-table-column prop="itemCode" label="工件编号" width="180" />
+            <el-table-column prop="barcode" label="条码" />
+            <el-table-column prop="categoryName" label="分类" width="120" />
+            <el-table-column label="操作" width="80" align="center">
+              <template #default="{ $index }">
+                <el-button link type="danger" @click="selectedItems.splice($index, 1)">移除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
         </el-form-item>
         <el-form-item label="客户名称">
-          <el-input v-model="form.customerName" placeholder="选填" />
+          <el-input v-model="customerName" placeholder="选填" />
         </el-form-item>
         <el-form-item label="客户电话">
-          <el-input v-model="form.customerPhone" placeholder="选填" />
+          <el-input v-model="customerPhone" placeholder="选填" />
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注信息" />
+          <el-input v-model="remark" type="textarea" :rows="2" placeholder="备注信息（选填）" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="loading" @click="handleSubmit">确认售卖</el-button>
-          <el-button @click="resetForm">重置</el-button>
+          <el-button type="danger" :loading="loading" :disabled="!selectedItems.length"
+            @click="handleSubmit">
+            确认售卖（{{ selectedItems.length }}件）
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
+
+    <ItemPicker ref="pickerRef" title="选择要售卖的工件" :multiple="true" :show-status="true"
+      :exclude-ids="selectedItems.map(i => i.id)" @confirm="onPickerConfirm" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getAccessoryByBarcode } from '@/api/accessory'
-import { sellAccessory } from '@/api/flow'
-import BarcodeScanner from '@/components/BarcodeScanner.vue'
+import { flowSell } from '@/api/flow'
+import ItemPicker from '@/components/ItemPicker.vue'
 
-const formRef = ref()
+const selectedItems = ref([])
+const customerName = ref('')
+const customerPhone = ref('')
+const remark = ref('')
 const loading = ref(false)
-const accessoryInfo = ref(null)
-const form = reactive({ barcode: '', customerName: '', customerPhone: '', remark: '' })
-const rules = { barcode: [{ required: true, message: '请输入条码', trigger: 'blur' }] }
+const pickerRef = ref()
 
-const onBarcodeScanned = async (code) => {
-  form.barcode = code
-  await loadAccessory()
-}
+const openPicker = () => { pickerRef.value.open() }
 
-const loadAccessory = async () => {
-  if (!form.barcode) return
-  try {
-    const { data } = await getAccessoryByBarcode(form.barcode)
-    accessoryInfo.value = data
-  } catch (e) { accessoryInfo.value = null }
+const onPickerConfirm = (items) => {
+  items.forEach(item => {
+    if (!selectedItems.value.find(s => s.id === item.id)) {
+      selectedItems.value.push(item)
+    }
+  })
 }
 
 const handleSubmit = async () => {
-  await formRef.value.validate()
-  if (accessoryInfo.value && accessoryInfo.value.availableQty < 1) {
-    ElMessage.warning('该配件库存不足，无法售卖')
-    return
-  }
   loading.value = true
   try {
-    await sellAccessory(form)
+    await flowSell({
+      accessoryIds: selectedItems.value.map(i => i.id),
+      customerName: customerName.value,
+      customerPhone: customerPhone.value,
+      remark: remark.value
+    })
     ElMessage.success('售卖成功')
-    resetForm()
+    selectedItems.value = []
+    customerName.value = ''
+    customerPhone.value = ''
+    remark.value = ''
   } catch (e) { /* handled */ } finally { loading.value = false }
-}
-
-const resetForm = () => {
-  formRef.value?.resetFields()
-  accessoryInfo.value = null
 }
 </script>
 
 <style scoped>
-.page-container { padding: 20px; }
-.page-header { margin-bottom: 16px; }
-.page-title { margin: 0; font-size: 18px; }
+.page-container { padding: 24px; }
+.page-header { margin-bottom: 20px; }
+.page-title { margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; }
+.sell-form { max-width: 900px; }
+.sell-form :deep(.el-form-item) { margin-bottom: 22px; }
 </style>

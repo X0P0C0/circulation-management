@@ -1,16 +1,19 @@
 package com.cm.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cm.common.exception.BusinessException;
 import com.cm.common.result.PageResult;
-import com.cm.entity.*;
-import com.cm.dto.FlowTransferDTO;
-import com.cm.dto.FlowSellDTO;
+import com.cm.dto.*;
+import com.cm.entity.Accessory;
+import com.cm.entity.FlowRecord;
+import com.cm.entity.Worker;
+import com.cm.enums.AccessoryStatusEnum;
 import com.cm.enums.FlowTypeEnum;
-import com.cm.mapper.*;
+import com.cm.mapper.AccessoryMapper;
+import com.cm.mapper.CategoryMapper;
+import com.cm.mapper.FlowRecordMapper;
+import com.cm.mapper.WorkerMapper;
 import com.cm.service.FlowService;
 import com.cm.service.OperationLogService;
 import com.cm.vo.FlowTraceVO;
@@ -20,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,208 +31,225 @@ import java.util.stream.Collectors;
 public class FlowServiceImpl implements FlowService {
 
     private final AccessoryMapper accessoryMapper;
-    private final InventoryMapper inventoryMapper;
-    private final InventoryOwnerMapper inventoryOwnerMapper;
     private final FlowRecordMapper flowRecordMapper;
     private final WorkerMapper workerMapper;
-    private final OperationLogService operationLogService;
     private final CategoryMapper categoryMapper;
-
+    private final OperationLogService operationLogService;
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void transferOut(FlowTransferDTO dto, String operator) {
+    public void outbound(FlowOutboundDTO dto, String operator) {
         Worker worker = workerMapper.selectById(dto.getWorkerId());
         if (worker == null) throw new BusinessException(404, "师傅不存在");
 
-        for (String barcode : dto.getBarcodes()) {
-            Accessory acc = accessoryMapper.selectOne(
-                    new LambdaQueryWrapper<Accessory>().eq(Accessory::getBarcode, barcode));
-            if (acc == null) throw new BusinessException(404, "条码不存在：" + barcode);
-
-            Inventory inv = inventoryMapper.selectOne(
-                    new LambdaQueryWrapper<Inventory>().eq(Inventory::getAccessoryId, acc.getId()));
-            if (inv == null || inv.getAvailableQty() < 1) {
-                throw new BusinessException(409, "库存不足：" + acc.getName() + "（" + barcode + "）");
+        for (Long accId : dto.getAccessoryIds()) {
+            Accessory acc = accessoryMapper.selectById(accId);
+            if (acc == null) throw new BusinessException(404, "工件不存在：" + accId);
+            if (acc.getStatus() != AccessoryStatusEnum.IN_STOCK.getCode()) {
+                throw new BusinessException(400, "工件 " + acc.getItemCode() + " 不在可支配库中");
             }
 
-            inventoryMapper.update(null, new LambdaUpdateWrapper<Inventory>()
-                    .eq(Inventory::getId, inv.getId())
-                    .setSql("available_qty = available_qty - 1"));
+            // 更新工件状态
+            acc.setStatus(AccessoryStatusEnum.OUTBOUND.getCode());
+            acc.setWorkerId(dto.getWorkerId());
+            accessoryMapper.updateById(acc);
 
-            InventoryOwner owner = inventoryOwnerMapper.selectOne(
-                    new LambdaQueryWrapper<InventoryOwner>()
-                            .eq(InventoryOwner::getAccessoryId, acc.getId())
-                            .eq(InventoryOwner::getWorkerId, dto.getWorkerId()));
-            if (owner != null) {
-                inventoryOwnerMapper.update(null, new LambdaUpdateWrapper<InventoryOwner>()
-                        .eq(InventoryOwner::getId, owner.getId())
-                        .setSql("qty = qty + 1"));
-            } else {
-                InventoryOwner newOwner = new InventoryOwner();
-                newOwner.setAccessoryId(acc.getId());
-                newOwner.setWorkerId(dto.getWorkerId());
-                newOwner.setQty(1);
-                inventoryOwnerMapper.insert(newOwner);
-            }
-
-            saveFlowRecord(acc, FlowTypeEnum.TRANSFER_OUT.getCode(), dto.getWorkerId(), worker.getName(), null, null, 1, dto.getRemark(), operator);
-            operationLogService.log("TRANSFER_OUT", "配件领用：" + acc.getName() + "（" + barcode + "）→ " + worker.getName(),
-                    barcode, dto.getWorkerId(), operator, null);
+            // 写流水
+            saveFlowRecord(acc, FlowTypeEnum.OUTBOUND.getCode(),
+                    null, null, dto.getWorkerId(), worker.getName(), null, null, dto.getRemark(), operator);
         }
+
+        operationLogService.log("OUTBOUND", "出库 " + dto.getAccessoryIds().size() + " 个工件给 " + worker.getName(),
+                null, dto.getWorkerId(), operator, null);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void transferIn(FlowTransferDTO dto, String operator) {
-        Worker worker = workerMapper.selectById(dto.getWorkerId());
-        if (worker == null) throw new BusinessException(404, "师傅不存在");
-
-        for (String barcode : dto.getBarcodes()) {
-            Accessory acc = accessoryMapper.selectOne(
-                    new LambdaQueryWrapper<Accessory>().eq(Accessory::getBarcode, barcode));
-            if (acc == null) throw new BusinessException(404, "条码不存在：" + barcode);
-
-            InventoryOwner owner = inventoryOwnerMapper.selectOne(
-                    new LambdaQueryWrapper<InventoryOwner>()
-                            .eq(InventoryOwner::getAccessoryId, acc.getId())
-                            .eq(InventoryOwner::getWorkerId, dto.getWorkerId()));
-            if (owner == null || owner.getQty() < 1) {
-                throw new BusinessException(409, "该师傅名下无此配件：" + acc.getName() + "（" + barcode + "）");
+    public void returnItem(FlowReturnDTO dto, String operator) {
+        for (Long accId : dto.getAccessoryIds()) {
+            Accessory acc = accessoryMapper.selectById(accId);
+            if (acc == null) throw new BusinessException(404, "工件不存在：" + accId);
+            if (acc.getStatus() != AccessoryStatusEnum.OUTBOUND.getCode()) {
+                throw new BusinessException(400, "工件 " + acc.getItemCode() + " 不在师傅手中");
             }
 
-            inventoryOwnerMapper.update(null, new LambdaUpdateWrapper<InventoryOwner>()
-                    .eq(InventoryOwner::getId, owner.getId())
-                    .setSql("qty = qty - 1"));
+            Long fromWorkerId = acc.getWorkerId();
+            String fromWorkerName = null;
+            if (fromWorkerId != null) {
+                Worker w = workerMapper.selectById(fromWorkerId);
+                if (w != null) fromWorkerName = w.getName();
+            }
 
-            inventoryMapper.update(null, new LambdaUpdateWrapper<Inventory>()
-                    .eq(Inventory::getAccessoryId, acc.getId())
-                    .setSql("available_qty = available_qty + 1"));
+            if (dto.getReturnType() == 1) {
+                // 工单完成：新工件状态→已完成
+                acc.setStatus(AccessoryStatusEnum.COMPLETED.getCode());
+                acc.setWorkerId(null);
+                accessoryMapper.updateById(acc);
 
-            saveFlowRecord(acc, FlowTypeEnum.TRANSFER_IN.getCode(), dto.getWorkerId(), worker.getName(), null, null, 1, dto.getRemark(), operator);
-            operationLogService.log("TRANSFER_IN", "配件归还：" + acc.getName() + "（" + barcode + "）← " + worker.getName(),
-                    barcode, dto.getWorkerId(), operator, null);
+                saveFlowRecord(acc, FlowTypeEnum.RETURN_COMPLETE.getCode(),
+                        fromWorkerId, fromWorkerName, null, null, null, null, dto.getRemark(), operator);
+            } else {
+                // 工单取消：判断高价值
+                if (Boolean.TRUE.equals(dto.getHighValue())) {
+                    // 高价值 → 寄回厂家
+                    acc.setStatus(AccessoryStatusEnum.RETURNED_FACTORY.getCode());
+                    acc.setIsHighValue(1);
+                    acc.setWorkerId(null);
+                    accessoryMapper.updateById(acc);
+
+                    saveFlowRecord(acc, FlowTypeEnum.RETURN_CANCEL_HIGH.getCode(),
+                            fromWorkerId, fromWorkerName, null, null, null, null, dto.getRemark(), operator);
+                } else {
+                    // 低价值 → 退回可支配库
+                    acc.setStatus(AccessoryStatusEnum.IN_STOCK.getCode());
+                    acc.setWorkerId(null);
+                    accessoryMapper.updateById(acc);
+
+                    saveFlowRecord(acc, FlowTypeEnum.RETURN_CANCEL_LOW.getCode(),
+                            fromWorkerId, fromWorkerName, null, null, null, null, dto.getRemark(), operator);
+                }
+            }
         }
+
+        operationLogService.log("RETURN", "归还 " + dto.getAccessoryIds().size() + " 个工件",
+                null, null, operator, null);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void sell(FlowSellDTO dto, String operator) {
-        Accessory acc = accessoryMapper.selectOne(
-                new LambdaQueryWrapper<Accessory>().eq(Accessory::getBarcode, dto.getBarcode()));
-        if (acc == null) throw new BusinessException(404, "条码不存在");
+        for (Long accId : dto.getAccessoryIds()) {
+            Accessory acc = accessoryMapper.selectById(accId);
+            if (acc == null) throw new BusinessException(404, "工件不存在：" + accId);
+            if (acc.getStatus() != AccessoryStatusEnum.IN_STOCK.getCode()) {
+                throw new BusinessException(400, "工件 " + acc.getItemCode() + " 不在可支配库中");
+            }
 
-        Inventory inv = inventoryMapper.selectOne(
-                new LambdaQueryWrapper<Inventory>().eq(Inventory::getAccessoryId, acc.getId()));
-        if (inv == null || inv.getAvailableQty() < 1) {
-            throw new BusinessException(409, "库存不足");
+            acc.setStatus(AccessoryStatusEnum.SOLD.getCode());
+            acc.setWorkerId(null);
+            accessoryMapper.updateById(acc);
+
+            saveFlowRecord(acc, FlowTypeEnum.SELL.getCode(),
+                    null, null, null, null, dto.getCustomerName(), dto.getCustomerPhone(), dto.getRemark(), operator);
         }
 
-        inventoryMapper.update(null, new LambdaUpdateWrapper<Inventory>()
-                .eq(Inventory::getId, inv.getId())
-                .setSql("available_qty = available_qty - 1"));
-
-        FlowRecord record = new FlowRecord();
-        record.setAccessoryId(acc.getId());
-        record.setBarcode(acc.getBarcode());
-        record.setAccessoryName(acc.getName());
-        record.setFlowType(FlowTypeEnum.SELL.getCode());
-        record.setCustomerName(dto.getCustomerName());
-        record.setCustomerPhone(dto.getCustomerPhone());
-        record.setQty(1);
-        record.setRemark(dto.getRemark());
-        record.setOperator(operator);
-        flowRecordMapper.insert(record);
-
-        String customerInfo = StringUtils.hasText(dto.getCustomerName()) ? " → 客户：" + dto.getCustomerName() : "";
-        operationLogService.log("SELL", "配件售卖：" + acc.getName() + "（" + dto.getBarcode() + "）" + customerInfo,
-                dto.getBarcode(), null, operator, null);
+        String customerInfo = StringUtils.hasText(dto.getCustomerName()) ? " → " + dto.getCustomerName() : "";
+        operationLogService.log("SELL", "售卖 " + dto.getAccessoryIds().size() + " 个工件" + customerInfo,
+                null, null, operator, null);
     }
 
     @Override
-    public FlowTraceVO trace(String barcode) {
+    @Transactional(rollbackFor = Exception.class)
+    public void transfer(FlowTransferDTO dto, String operator) {
+        Worker fromWorker = workerMapper.selectById(dto.getFromWorkerId());
+        Worker toWorker = workerMapper.selectById(dto.getToWorkerId());
+        if (fromWorker == null) throw new BusinessException(404, "源师傅不存在");
+        if (toWorker == null) throw new BusinessException(404, "目标师傅不存在");
+
+        for (Long accId : dto.getAccessoryIds()) {
+            Accessory acc = accessoryMapper.selectById(accId);
+            if (acc == null) throw new BusinessException(404, "工件不存在：" + accId);
+            if (!dto.getFromWorkerId().equals(acc.getWorkerId())) {
+                throw new BusinessException(400, "工件 " + acc.getItemCode() + " 不在该师傅手中");
+            }
+
+            acc.setWorkerId(dto.getToWorkerId());
+            accessoryMapper.updateById(acc);
+
+            saveFlowRecord(acc, FlowTypeEnum.TRANSFER.getCode(),
+                    dto.getFromWorkerId(), fromWorker.getName(),
+                    dto.getToWorkerId(), toWorker.getName(),
+                    null, null, dto.getRemark(), operator);
+        }
+
+        operationLogService.log("TRANSFER", "转移 " + dto.getAccessoryIds().size() + " 个工件：" +
+                fromWorker.getName() + " → " + toWorker.getName(), null, null, operator, null);
+    }
+
+    @Override
+    public FlowTraceVO trace(String itemCode) {
         Accessory acc = accessoryMapper.selectOne(
-                new LambdaQueryWrapper<Accessory>().eq(Accessory::getBarcode, barcode));
-        if (acc == null) throw new BusinessException(404, "条码不存在");
-
-        Inventory inv = inventoryMapper.selectOne(
-                new LambdaQueryWrapper<Inventory>().eq(Inventory::getAccessoryId, acc.getId()));
-
-        List<FlowRecord> records = flowRecordMapper.selectList(
-                new LambdaQueryWrapper<FlowRecord>()
-                        .eq(FlowRecord::getBarcode, barcode)
-                        .orderByDesc(FlowRecord::getCreateTime));
+                new LambdaQueryWrapper<Accessory>().eq(Accessory::getItemCode, itemCode));
+        if (acc == null) throw new BusinessException(404, "工件编号不存在");
 
         FlowTraceVO vo = new FlowTraceVO();
-        vo.setBarcode(barcode);
-        vo.setAccessoryName(acc.getName());
-        vo.setCurrentQty(inv != null ? inv.getAvailableQty() : 0);
+        vo.setItemCode(itemCode);
+        vo.setBarcode(acc.getBarcode());
+        vo.setCategoryId(acc.getCategoryId());
+        vo.setCurrentStatus(acc.getStatus());
+        vo.setCurrentStatusDesc(AccessoryStatusEnum.of(acc.getStatus()).getDesc());
 
-        String currentHolder = "总库存";
-        if (inv != null && inv.getAvailableQty() == 0 && !records.isEmpty()) {
-            FlowRecord last = records.get(0);
-            if (last.getFlowType() == FlowTypeEnum.SELL.getCode()) {
-                currentHolder = "已售出";
-            } else if (last.getFlowType() == FlowTypeEnum.TRANSFER_OUT.getCode()) {
-                currentHolder = last.getWorkerName() + "（师傅）";
-            }
+        // 当前持有者
+        if (acc.getWorkerId() != null) {
+            Worker w = workerMapper.selectById(acc.getWorkerId());
+            vo.setCurrentHolder(w != null ? w.getName() + "（师傅）" : "未知师傅");
+        } else {
+            vo.setCurrentHolder(AccessoryStatusEnum.of(acc.getStatus()).getDesc());
         }
-        vo.setCurrentHolder(currentHolder);
 
-        List<FlowTraceVO.FlowStep> steps = records.stream().map(r -> {
+        if (acc.getCategoryId() != null) {
+            var cat = categoryMapper.selectById(acc.getCategoryId());
+            if (cat != null) vo.setCategoryName(cat.getName());
+        }
+
+        // 流转记录
+        List<FlowRecord> records = flowRecordMapper.selectList(
+                new LambdaQueryWrapper<FlowRecord>()
+                        .eq(FlowRecord::getItemCode, itemCode)
+                        .orderByDesc(FlowRecord::getCreateTime));
+
+        vo.setSteps(records.stream().map(r -> {
             FlowTraceVO.FlowStep step = new FlowTraceVO.FlowStep();
             step.setId(r.getId());
             step.setFlowType(r.getFlowType());
             step.setFlowTypeDesc(FlowTypeEnum.of(r.getFlowType()).getDesc());
-            step.setWorkerName(r.getWorkerName());
+            step.setFromWorkerName(r.getFromWorkerName());
+            step.setToWorkerName(r.getToWorkerName());
             step.setCustomerName(r.getCustomerName());
             step.setOperator(r.getOperator());
             step.setRemark(r.getRemark());
             step.setCreateTime(r.getCreateTime() != null ? r.getCreateTime().format(FMT) : "");
             return step;
-        }).collect(Collectors.toList());
-        vo.setSteps(steps);
+        }).collect(Collectors.toList()));
+
         return vo;
     }
 
     @Override
     public PageResult<?> listRecords(Integer flowType, Long workerId, String keyword,
-                                     String startDate, String endDate,
                                      Integer pageNum, Integer pageSize) {
         LambdaQueryWrapper<FlowRecord> wrapper = new LambdaQueryWrapper<>();
         if (flowType != null) wrapper.eq(FlowRecord::getFlowType, flowType);
-        if (workerId != null) wrapper.eq(FlowRecord::getWorkerId, workerId);
+        if (workerId != null) {
+            wrapper.and(w -> w.eq(FlowRecord::getToWorkerId, workerId)
+                    .or().eq(FlowRecord::getFromWorkerId, workerId));
+        }
         if (StringUtils.hasText(keyword)) {
-            wrapper.and(w -> w.like(FlowRecord::getBarcode, keyword)
-                    .or().like(FlowRecord::getAccessoryName, keyword)
-                    .or().like(FlowRecord::getWorkerName, keyword));
+            wrapper.and(w -> w.like(FlowRecord::getItemCode, keyword)
+                    .or().like(FlowRecord::getBarcode, keyword));
         }
         wrapper.orderByDesc(FlowRecord::getCreateTime);
         Page<FlowRecord> page = flowRecordMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         return new PageResult<>(page.getRecords(), page.getTotal(), pageNum, pageSize);
     }
 
-    @Override
-    public List<?> workerRecords(Long workerId) {
-        return flowRecordMapper.selectList(
-                new LambdaQueryWrapper<FlowRecord>()
-                        .eq(FlowRecord::getWorkerId, workerId)
-                        .orderByDesc(FlowRecord::getCreateTime));
-    }
-
-    private void saveFlowRecord(Accessory acc, int flowType, Long workerId, String workerName,
-                                String customerName, String customerPhone, int qty, String remark, String operator) {
+    private void saveFlowRecord(Accessory acc, int flowType,
+                                Long fromWorkerId, String fromWorkerName,
+                                Long toWorkerId, String toWorkerName,
+                                String customerName, String customerPhone,
+                                String remark, String operator) {
         FlowRecord record = new FlowRecord();
         record.setAccessoryId(acc.getId());
+        record.setItemCode(acc.getItemCode());
         record.setBarcode(acc.getBarcode());
-        record.setAccessoryName(acc.getName());
         record.setFlowType(flowType);
-        record.setWorkerId(workerId);
-        record.setWorkerName(workerName);
+        record.setFromWorkerId(fromWorkerId);
+        record.setFromWorkerName(fromWorkerName);
+        record.setToWorkerId(toWorkerId);
+        record.setToWorkerName(toWorkerName);
         record.setCustomerName(customerName);
         record.setCustomerPhone(customerPhone);
-        record.setQty(qty);
         record.setRemark(remark);
         record.setOperator(operator);
         flowRecordMapper.insert(record);

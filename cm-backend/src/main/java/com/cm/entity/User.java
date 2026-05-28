@@ -12,9 +12,10 @@ public class User {
     private String username;
     private String passwordHash;
     private String realName;
-    /** 角色：1=管理员 2=操作员 */
     private Integer role;
     private Integer status;
+    private Integer loginFailCount;
+    private LocalDateTime lockTime;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
     @TableField(fill = FieldFill.INSERT_UPDATE)

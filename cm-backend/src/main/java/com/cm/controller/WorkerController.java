@@ -3,9 +3,7 @@ package com.cm.controller;
 import com.cm.common.result.PageResult;
 import com.cm.common.result.Result;
 import com.cm.dto.WorkerDTO;
-import com.cm.service.InventoryService;
 import com.cm.service.WorkerService;
-import com.cm.vo.InventoryVO;
 import com.cm.vo.WorkerVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,24 +16,23 @@ import java.util.List;
 public class WorkerController {
 
     private final WorkerService workerService;
-    private final InventoryService inventoryService;
 
     @PostMapping
     public Result<Void> create(@Valid @RequestBody WorkerDTO dto) {
         workerService.create(dto);
-        return Result.success();
+        return Result.ok();
     }
 
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody WorkerDTO dto) {
         workerService.update(id, dto);
-        return Result.success();
+        return Result.ok();
     }
 
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         workerService.delete(id);
-        return Result.success();
+        return Result.ok();
     }
 
     @GetMapping
@@ -43,16 +40,11 @@ public class WorkerController {
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        return Result.success(workerService.listPage(keyword, pageNum, pageSize));
+        return Result.ok(workerService.listPage(keyword, pageNum, pageSize));
     }
 
     @GetMapping("/all")
     public Result<List<WorkerVO>> listAll() {
-        return Result.success(workerService.listAll());
-    }
-
-    @GetMapping("/{id}/inventory")
-    public Result<List<?>> workerInventory(@PathVariable Long id) {
-        return Result.success(inventoryService.getWorkerInventory(id));
+        return Result.ok(workerService.listAll());
     }
 }

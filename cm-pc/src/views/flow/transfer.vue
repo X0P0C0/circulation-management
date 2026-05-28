@@ -1,19 +1,27 @@
 <template>
   <div class="page-container">
     <div class="page-header">
-      <h2 class="page-title">配件出库</h2>
+      <h2 class="page-title">库存转移</h2>
     </div>
     <el-card>
-      <el-form label-width="100px" class="outbound-form">
-        <el-form-item label="选择师傅" required>
-          <el-select v-model="workerId" placeholder="请选择出库师傅" filterable style="width: 100%">
+      <el-form label-width="100px" class="transfer-form">
+        <el-form-item label="源师傅" required>
+          <el-select v-model="fromWorkerId" placeholder="选择源师傅" filterable style="width: 100%"
+            @change="onFromWorkerChange">
             <el-option v-for="w in workerList" :key="w.id" :label="w.name" :value="w.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="选择工件">
-          <el-button type="primary" @click="openPicker">添加工件</el-button>
+        <el-form-item label="目标师傅" required>
+          <el-select v-model="toWorkerId" placeholder="选择目标师傅" filterable style="width: 100%">
+            <el-option v-for="w in workerList" :key="w.id" :label="w.name" :value="w.id"
+              :disabled="w.id === fromWorkerId" />
+          </el-select>
         </el-form-item>
-        <el-form-item v-if="selectedItems.length" label="出库清单">
+        <el-form-item label="选择工件">
+          <el-button type="primary" :disabled="!fromWorkerId" @click="openPicker">添加工件</el-button>
+          <span v-if="!fromWorkerId" style="margin-left: 8px; color: #94a3b8; font-size: 13px">请先选择源师傅</span>
+        </el-form-item>
+        <el-form-item v-if="selectedItems.length" label="转移清单">
           <el-table :data="selectedItems" stripe border style="width: 100%">
             <el-table-column type="index" label="序号" width="60" align="center" />
             <el-table-column prop="itemCode" label="工件编号" width="180" />
@@ -30,16 +38,17 @@
           <el-input v-model="remark" placeholder="备注信息（选填）" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="loading" :disabled="!workerId || !selectedItems.length"
+          <el-button type="primary" :loading="loading" :disabled="!fromWorkerId || !toWorkerId || !selectedItems.length"
             @click="handleSubmit">
-            确认出库（{{ selectedItems.length }}件）
+            确认转移（{{ selectedItems.length }}件）
           </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <ItemPicker ref="pickerRef" title="选择要出库的工件" :multiple="true" :default-status="1"
-      :show-status="false" :exclude-ids="selectedItems.map(i => i.id)" @confirm="onPickerConfirm" />
+    <ItemPicker ref="pickerRef" title="选择要转移的工件" :multiple="true" :default-status="2"
+      :show-status="false" :worker-id="fromWorkerId" :exclude-ids="selectedItems.map(i => i.id)"
+      @confirm="onPickerConfirm" />
   </div>
 </template>
 
@@ -47,19 +56,23 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getAllWorkers } from '@/api/worker'
-import { flowOutbound } from '@/api/flow'
+import { flowTransfer } from '@/api/flow'
 import ItemPicker from '@/components/ItemPicker.vue'
 
-const workerId = ref(null)
+const fromWorkerId = ref(null)
+const toWorkerId = ref(null)
 const workerList = ref([])
 const selectedItems = ref([])
 const remark = ref('')
 const loading = ref(false)
 const pickerRef = ref()
 
-const openPicker = () => {
-  pickerRef.value.open()
+const onFromWorkerChange = () => {
+  selectedItems.value = []
+  if (toWorkerId.value === fromWorkerId.value) toWorkerId.value = null
 }
+
+const openPicker = () => { pickerRef.value.open() }
 
 const onPickerConfirm = (items) => {
   items.forEach(item => {
@@ -72,17 +85,16 @@ const onPickerConfirm = (items) => {
 const handleSubmit = async () => {
   loading.value = true
   try {
-    await flowOutbound({
-      workerId: workerId.value,
+    await flowTransfer({
+      fromWorkerId: fromWorkerId.value,
+      toWorkerId: toWorkerId.value,
       accessoryIds: selectedItems.value.map(i => i.id),
       remark: remark.value
     })
-    ElMessage.success('出库成功')
+    ElMessage.success('转移成功')
     selectedItems.value = []
     remark.value = ''
-  } catch (e) { /* handled */ } finally {
-    loading.value = false
-  }
+  } catch (e) { /* handled */ } finally { loading.value = false }
 }
 
 onMounted(async () => {
@@ -97,6 +109,6 @@ onMounted(async () => {
 .page-container { padding: 24px; }
 .page-header { margin-bottom: 20px; }
 .page-title { margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; }
-.outbound-form { max-width: 900px; }
-.outbound-form :deep(.el-form-item) { margin-bottom: 22px; }
+.transfer-form { max-width: 900px; }
+.transfer-form :deep(.el-form-item) { margin-bottom: 22px; }
 </style>

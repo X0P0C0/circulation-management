@@ -7,12 +7,15 @@ import java.time.LocalDateTime;
 public class AccessoryVO {
     private Long id;
     private String barcode;
-    private String name;
-    private String spec;
+    private String itemCode;
     private Long categoryId;
     private String categoryName;
-    private String unit;
     private String remark;
-    private Integer availableQty;
+    private Integer status;
+    private String statusDesc;
+    private Long workerId;
+    private String workerName;
+    private String relatedItemCode;
+    private Integer isHighValue;
     private LocalDateTime createTime;
 }

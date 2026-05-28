@@ -16,12 +16,11 @@
         <el-table-column prop="jobNo" label="工号" />
         <el-table-column prop="phone" label="电话" />
         <el-table-column prop="remark" label="备注" show-overflow-tooltip />
-        <el-table-column label="操作" width="260" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDialog(row)">编辑</el-button>
             <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
             <el-button link type="success" @click="viewInventory(row)">库存</el-button>
-            <el-button link type="info" @click="viewRecords(row)">记录</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -32,7 +31,6 @@
       </div>
     </el-card>
 
-    <!-- 新增/编辑弹窗 -->
     <el-dialog v-model="dialogVisible" :title="editId ? '编辑师傅' : '新增师傅'" width="500px" :close-on-click-modal="false">
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="80px">
         <el-form-item label="姓名" prop="name">
@@ -54,33 +52,13 @@
       </template>
     </el-dialog>
 
-    <!-- 库存/记录抽屉 -->
     <el-drawer v-model="drawerVisible" :title="drawerTitle" size="650px">
-      <el-tabs v-model="drawerTab">
-        <el-tab-pane label="持有配件" name="inventory">
-          <el-table :data="workerInventory" stripe border empty-text="暂无配件">
-            <el-table-column type="index" label="序号" width="55" align="center" />
-            <el-table-column prop="barcode" label="条码" width="180" />
-            <el-table-column prop="accessoryName" label="配件名称" />
-            <el-table-column prop="spec" label="规格型号" width="120" />
-            <el-table-column prop="availableQty" label="数量" width="80" align="center" />
-          </el-table>
-        </el-tab-pane>
-        <el-tab-pane label="流转记录" name="records">
-          <el-table :data="records" stripe border empty-text="暂无记录">
-            <el-table-column prop="barcode" label="条码" width="180" />
-            <el-table-column prop="accessoryName" label="配件名称" />
-            <el-table-column prop="flowType" label="类型" width="80" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.flowType===1?'success':row.flowType===2?'primary':row.flowType===3?'warning':'info'" size="small">
-                  {{ {1:'入库',2:'领用',3:'归还',4:'售卖'}[row.flowType] || '-' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="createTime" label="时间" width="180" />
-          </el-table>
-        </el-tab-pane>
-      </el-tabs>
+      <el-table :data="workerItems" stripe border empty-text="暂无配件">
+        <el-table-column type="index" label="序号" width="55" align="center" />
+        <el-table-column prop="itemCode" label="工件编号" width="180" />
+        <el-table-column prop="barcode" label="条码" />
+        <el-table-column prop="categoryName" label="分类" width="120" />
+      </el-table>
     </el-drawer>
   </div>
 </template>
@@ -88,8 +66,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getWorkers, createWorker, updateWorker, deleteWorker, getWorkerInventory } from '@/api/worker'
-import { getWorkerRecords } from '@/api/flow'
+import { getWorkers, createWorker, updateWorker, deleteWorker } from '@/api/worker'
+import { searchAccessories } from '@/api/accessory'
 
 const list = ref([])
 const loading = ref(false)
@@ -105,9 +83,7 @@ const form = reactive({ name: '', jobNo: '', phone: '', remark: '' })
 const formRules = { name: [{ required: true, message: '请输入师傅姓名', trigger: 'blur' }] }
 const drawerVisible = ref(false)
 const drawerTitle = ref('')
-const drawerTab = ref('inventory')
-const records = ref([])
-const workerInventory = ref([])
+const workerItems = ref([])
 
 const loadData = async () => {
   loading.value = true
@@ -146,22 +122,11 @@ const handleDelete = async (row) => {
 }
 
 const viewInventory = async (row) => {
-  drawerTitle.value = row.name + ' - 持有配件'
-  drawerTab.value = 'inventory'
+  drawerTitle.value = row.name + ' - 持有工件'
   drawerVisible.value = true
   try {
-    const { data } = await getWorkerInventory(row.id)
-    workerInventory.value = data
-  } catch (e) { /* handled */ }
-}
-
-const viewRecords = async (row) => {
-  drawerTitle.value = row.name + ' - 流转记录'
-  drawerTab.value = 'records'
-  drawerVisible.value = true
-  try {
-    const { data } = await getWorkerRecords(row.id)
-    records.value = data
+    const { data } = await searchAccessories({ workerId: row.id, status: 2, pageNum: 1, pageSize: 100 })
+    workerItems.value = data.records
   } catch (e) { /* handled */ }
 }
 
@@ -169,7 +134,7 @@ onMounted(() => loadData())
 </script>
 
 <style scoped>
-.page-container { padding: 20px; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.page-title { margin: 0; font-size: 18px; }
+.page-container { padding: 24px; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.page-title { margin: 0; font-size: 20px; font-weight: 700; color: #1e293b; }
 </style>

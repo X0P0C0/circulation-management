@@ -4,9 +4,8 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class FlowSellDTO {
+public class FlowOutboundDTO {
+    private Long workerId;
     private List<Long> accessoryIds;
-    private String customerName;
-    private String customerPhone;
     private String remark;
 }

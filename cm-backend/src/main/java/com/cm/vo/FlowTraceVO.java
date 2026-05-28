@@ -5,9 +5,12 @@ import java.util.List;
 
 @Data
 public class FlowTraceVO {
+    private String itemCode;
     private String barcode;
-    private String accessoryName;
-    private Integer currentQty;
+    private Long categoryId;
+    private String categoryName;
+    private Integer currentStatus;
+    private String currentStatusDesc;
     private String currentHolder;
     private List<FlowStep> steps;
 
@@ -16,7 +19,8 @@ public class FlowTraceVO {
         private Long id;
         private Integer flowType;
         private String flowTypeDesc;
-        private String workerName;
+        private String fromWorkerName;
+        private String toWorkerName;
         private String customerName;
         private String operator;
         private String remark;

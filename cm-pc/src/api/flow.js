@@ -1,25 +1,28 @@
 import request from '@/utils/request'
 
-export function transferOut(data) {
-  return request.post('/api/flows/transfer-out', data)
+export function flowOutbound(data) {
+  return request.post('/api/flows/outbound', data)
 }
 
-export function transferIn(data) {
-  return request.post('/api/flows/transfer-in', data)
+export function flowReturn(data) {
+  return request.post('/api/flows/return', data)
 }
 
-export function sellAccessory(data) {
+export function flowSell(data) {
   return request.post('/api/flows/sell', data)
 }
 
-export function traceBarcode(barcode) {
-  return request.get('/api/flows/trace/' + barcode)
+export function flowTransfer(data) {
+  return request.post('/api/flows/transfer', data)
+}
+
+export function traceItem(itemCode) {
+  return request.get('/api/flows/trace/' + itemCode)
 }
 
 export function getFlowRecords(params) {
   return request.get('/api/flows/records', { params })
 }
-
 export function getWorkerRecords(workerId) {
-  return request.get('/api/flows/workers/' + workerId + '/records')
+  return request.get('/api/flows/records', { params: { workerId } })
 }

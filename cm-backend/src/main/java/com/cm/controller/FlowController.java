@@ -3,8 +3,7 @@ package com.cm.controller;
 import com.cm.common.constant.Constants;
 import com.cm.common.result.PageResult;
 import com.cm.common.result.Result;
-import com.cm.dto.FlowSellDTO;
-import com.cm.dto.FlowTransferDTO;
+import com.cm.dto.*;
 import com.cm.service.FlowService;
 import com.cm.vo.FlowTraceVO;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,27 +18,41 @@ public class FlowController {
 
     private final FlowService flowService;
 
-    @PostMapping("/transfer-out")
-    public Result<Void> transferOut(@Valid @RequestBody FlowTransferDTO dto, HttpServletRequest request) {
-        flowService.transferOut(dto, (String) request.getAttribute(Constants.USERNAME_ATTR));
-        return Result.success();
+    @PostMapping("/outbound")
+    public Result<Void> outbound(@Valid @RequestBody FlowOutboundDTO dto,
+                                  HttpServletRequest request) {
+        String operator = (String) request.getAttribute(Constants.USERNAME_ATTR);
+        flowService.outbound(dto, operator);
+        return Result.ok();
     }
 
-    @PostMapping("/transfer-in")
-    public Result<Void> transferIn(@Valid @RequestBody FlowTransferDTO dto, HttpServletRequest request) {
-        flowService.transferIn(dto, (String) request.getAttribute(Constants.USERNAME_ATTR));
-        return Result.success();
+    @PostMapping("/return")
+    public Result<Void> returnItem(@Valid @RequestBody FlowReturnDTO dto,
+                                    HttpServletRequest request) {
+        String operator = (String) request.getAttribute(Constants.USERNAME_ATTR);
+        flowService.returnItem(dto, operator);
+        return Result.ok();
     }
 
     @PostMapping("/sell")
-    public Result<Void> sell(@Valid @RequestBody FlowSellDTO dto, HttpServletRequest request) {
-        flowService.sell(dto, (String) request.getAttribute(Constants.USERNAME_ATTR));
-        return Result.success();
+    public Result<Void> sell(@Valid @RequestBody FlowSellDTO dto,
+                              HttpServletRequest request) {
+        String operator = (String) request.getAttribute(Constants.USERNAME_ATTR);
+        flowService.sell(dto, operator);
+        return Result.ok();
     }
 
-    @GetMapping("/trace/{barcode}")
-    public Result<FlowTraceVO> trace(@PathVariable String barcode) {
-        return Result.success(flowService.trace(barcode));
+    @PostMapping("/transfer")
+    public Result<Void> transfer(@Valid @RequestBody FlowTransferDTO dto,
+                                  HttpServletRequest request) {
+        String operator = (String) request.getAttribute(Constants.USERNAME_ATTR);
+        flowService.transfer(dto, operator);
+        return Result.ok();
+    }
+
+    @GetMapping("/trace/{itemCode}")
+    public Result<FlowTraceVO> trace(@PathVariable String itemCode) {
+        return Result.ok(flowService.trace(itemCode));
     }
 
     @GetMapping("/records")
@@ -47,15 +60,8 @@ public class FlowController {
             @RequestParam(required = false) Integer flowType,
             @RequestParam(required = false) Long workerId,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
             @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        return Result.success(flowService.listRecords(flowType, workerId, keyword, startDate, endDate, pageNum, pageSize));
-    }
-
-    @GetMapping("/workers/{workerId}/records")
-    public Result<?> workerRecords(@PathVariable Long workerId) {
-        return Result.success(flowService.workerRecords(workerId));
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        return Result.ok(flowService.listRecords(flowType, workerId, keyword, pageNum, pageSize));
     }
 }
