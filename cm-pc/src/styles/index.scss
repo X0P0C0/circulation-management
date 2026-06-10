@@ -143,17 +143,63 @@ html, body, #app {
 
 /* 分页 */
 .el-pagination {
-  margin-top: var(--spacing-md);
+  margin-top: 0;
+
+  .el-pagination__total {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .el-pagination__sizes {
+    .el-select .el-input__wrapper {
+      border-radius: 20px !important;
+      padding: 0 12px;
+    }
+  }
 
   .el-pager li {
-    border-radius: var(--border-radius-sm) !important;
+    border-radius: 20px !important;
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 13px;
+    margin: 0 2px;
+    transition: var(--transition);
+
+    &:hover {
+      color: var(--primary);
+    }
+
+    &.is-active {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+    }
+  }
+
+  .btn-prev,
+  .btn-next {
+    border-radius: 20px !important;
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+  }
+
+  .el-pagination__jump {
+    font-size: 13px;
+    color: var(--text-secondary);
+
+    .el-input__wrapper {
+      border-radius: 20px !important;
+      width: 48px;
+      padding: 0 8px;
+    }
   }
 }
 
 /* 弹窗 */
 .el-dialog {
   border-radius: var(--border-radius-lg) !important;
-  overflow: hidden;
 
   .el-dialog__header {
     padding: 20px 24px 16px;
@@ -232,3 +278,13 @@ html, body, #app {
   flex: 1;
   min-width: 0;
 }
+
+/* ---- 下拉面板防遮挡 ---- */
+.el-card__body { overflow: visible !important; }
+.el-dialog { overflow: visible !important; }
+.el-dialog__body { overflow: visible !important; }
+
+/* ---- 表单下拉防遮挡 ---- */
+.el-form-item { overflow: visible !important; }
+.el-form-item__content { overflow: visible !important; }
+.el-dialog .el-form { overflow: visible !important; }

@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- 配件流转管理系统 数据库初始化脚本 v2.0
 -- Database: cm_db
 -- ============================================================
@@ -69,8 +69,10 @@ CREATE TABLE `accessory` (
   `status`           TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '1=在库 2=已出库 3=已完成 4=寄回厂家 5=旧件待返厂 6=已售卖',
   `worker_id`        BIGINT UNSIGNED DEFAULT NULL COMMENT '当前持有师傅（已出库时）',
   `related_item_code` VARCHAR(50)    DEFAULT NULL COMMENT '关联新工件编号（旧件专用）',
+  `shelf_id`      BIGINT UNSIGNED  DEFAULT NULL COMMENT '货架ID',
   `is_high_value`    TINYINT         DEFAULT NULL COMMENT '1=高价值 0=低价值（退件时）',
   `operator`         VARCHAR(50)     DEFAULT NULL COMMENT '入库操作人',
+  `version`          INT UNSIGNED    NOT NULL DEFAULT 0 COMMENT '乐观锁',
   `create_time`      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time`      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -95,6 +97,7 @@ CREATE TABLE `flow_record` (
   `from_worker_name` VARCHAR(50)    DEFAULT NULL,
   `to_worker_id`    BIGINT UNSIGNED DEFAULT NULL COMMENT '目标师傅（出库/转移时）',
   `to_worker_name`  VARCHAR(50)     DEFAULT NULL,
+  `price`           DECIMAL(10,2)   DEFAULT NULL COMMENT '售卖单价',
   `customer_name`   VARCHAR(50)     DEFAULT NULL COMMENT '客户姓名（售卖时）',
   `customer_phone`  VARCHAR(20)     DEFAULT NULL,
   `remark`          VARCHAR(255)    DEFAULT NULL,
@@ -116,6 +119,8 @@ CREATE TABLE `operation_log` (
   `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `action_type`   VARCHAR(50)     NOT NULL COMMENT '操作类型',
   `content`       VARCHAR(500)    DEFAULT NULL COMMENT '操作内容',
+  `related_barcode` VARCHAR(100)  DEFAULT NULL COMMENT '关联条码',
+  `related_worker_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '关联师傅ID',
   `operator`      VARCHAR(50)     DEFAULT NULL COMMENT '操作人',
   `ip`            VARCHAR(50)     DEFAULT NULL COMMENT '操作IP',
   `create_time`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -125,6 +130,17 @@ CREATE TABLE `operation_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
 
 -- -----------------------------------------------------------
+
+
+DROP TABLE IF EXISTS `shelf`;
+CREATE TABLE `shelf` (
+  `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(100)    NOT NULL COMMENT '货架名称',
+  `location`    VARCHAR(200)    DEFAULT NULL COMMENT '位置描述',
+  `remark`      VARCHAR(255)    DEFAULT NULL,
+  `create_time` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='货架表';
 -- 初始数据
 -- -----------------------------------------------------------
 INSERT INTO `category` (`name`, `sort`) VALUES

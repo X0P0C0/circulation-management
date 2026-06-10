@@ -16,6 +16,10 @@ export function flowTransfer(data) {
   return request.post('/api/flows/transfer', data)
 }
 
+export function traceByBarcode(barcode) {
+  return request.get('/api/flows/trace', { params: { barcode } })
+}
+
 export function traceItem(itemCode) {
   return request.get('/api/flows/trace/' + itemCode)
 }

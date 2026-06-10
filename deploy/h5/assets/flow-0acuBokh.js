@@ -1,0 +1,1 @@
+import{as as s}from"./index-CVvVzM5Y.js";function e(r){return s.post("/api/flows/transfer-out",r)}function o(r){return s.post("/api/flows/transfer-in",r)}function n(r){return s.post("/api/flows/sell",r)}function a(r){return s.get("/api/flows/trace/"+r)}function f(r){return s.get("/api/flows/records",{params:r})}export{o as a,e as b,f as g,n as s,a as t};

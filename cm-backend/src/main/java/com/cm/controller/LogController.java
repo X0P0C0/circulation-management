@@ -17,10 +17,14 @@ public class LogController {
     @GetMapping
     public Result<PageResult<OperationLog>> list(
             @RequestParam(required = false) String actionType,
+            @RequestParam(required = false) String operator,
+            @RequestParam(required = false) String barcode,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String sortFields,
+            @RequestParam(required = false) String sortOrders,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        return Result.success(logService.listPage(actionType, startDate, endDate, pageNum, pageSize));
+        return Result.success(logService.listPage(actionType, operator, barcode, startDate, endDate, sortFields, sortOrders, pageNum, pageSize));
     }
 }

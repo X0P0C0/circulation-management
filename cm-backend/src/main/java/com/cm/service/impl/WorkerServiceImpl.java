@@ -15,7 +15,12 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.cm.common.util.SortUtils;
+import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,7 +52,8 @@ public class WorkerServiceImpl extends ServiceImpl<WorkerMapper, Worker> impleme
     }
 
     @Override
-    public PageResult<WorkerVO> listPage(String keyword, Integer pageNum, Integer pageSize) {
+    public PageResult<WorkerVO> listPage(String keyword, String sortFields, String sortOrders,
+                                         Integer pageNum, Integer pageSize) {
         LambdaQueryWrapper<Worker> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Worker::getStatus, 1);
         if (StringUtils.hasText(keyword)) {
@@ -55,7 +61,13 @@ public class WorkerServiceImpl extends ServiceImpl<WorkerMapper, Worker> impleme
                     .or().like(Worker::getPhone, keyword)
                     .or().like(Worker::getJobNo, keyword));
         }
-        wrapper.orderByAsc(Worker::getId);
+        Map<String, SFunction<Worker, ?>> sortMapper = new HashMap<>();
+        sortMapper.put("name", Worker::getName);
+        sortMapper.put("jobNo", Worker::getJobNo);
+        sortMapper.put("phone", Worker::getPhone);
+        sortMapper.put("remark", Worker::getRemark);
+        sortMapper.put("createTime", Worker::getCreateTime);
+        SortUtils.applyMultiSort(wrapper, sortFields, sortOrders, sortMapper, Worker::getId, true);
         Page<Worker> page = page(new Page<>(pageNum, pageSize), wrapper);
         List<WorkerVO> records = page.getRecords().stream().map(this::toVO).collect(Collectors.toList());
         return new PageResult<>(records, page.getTotal(), pageNum, pageSize);

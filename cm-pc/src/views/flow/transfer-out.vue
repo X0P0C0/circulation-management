@@ -6,7 +6,7 @@
     <el-card>
       <el-form label-width="100px" class="outbound-form">
         <el-form-item label="选择师傅" required>
-          <el-select v-model="workerId" placeholder="请选择出库师傅" filterable style="width: 100%">
+          <el-select v-model="workerId" placeholder="请选择出库师傅" filterable style="width: 100%" @focus="loadWorkerData">
             <el-option v-for="w in workerList" :key="w.id" :label="w.name" :value="w.id" />
           </el-select>
         </el-form-item>
@@ -14,7 +14,12 @@
           <el-button type="primary" @click="openPicker">添加工件</el-button>
         </el-form-item>
         <el-form-item v-if="selectedItems.length" label="出库清单">
-          <el-table :data="selectedItems" stripe border style="width: 100%">
+          <div style="margin-bottom: 10px" v-if="tableSelections.length">
+            <el-button type="danger" size="small" @click="batchRemove">批量移除（{{ tableSelections.length }}）</el-button>
+          </div>
+          <el-table ref="tableRef" :data="selectedItems" stripe border style="width: 100%"
+            @selection-change="onTableSelectionChange">
+            <el-table-column type="selection" width="45" align="center" />
             <el-table-column type="index" label="序号" width="60" align="center" />
             <el-table-column prop="itemCode" label="工件编号" width="180" />
             <el-table-column prop="barcode" label="条码" />
@@ -34,20 +39,23 @@
             @click="handleSubmit">
             确认出库（{{ selectedItems.length }}件）
           </el-button>
+          <el-button v-if="lastOutbound" @click="handlePrint">打印出库单</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
     <ItemPicker ref="pickerRef" title="选择要出库的工件" :multiple="true" :default-status="1"
-      :show-status="false" :exclude-ids="selectedItems.map(i => i.id)" @confirm="onPickerConfirm" />
+      :show-status="false" :show-worker-filter="true" fixed-owner="hq" :exclude-ids="selectedItems.map(i => i.id)" :exclude-barcodes="selectedItems.map(i => i.barcode)"
+      @confirm="onPickerConfirm" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getAllWorkers } from '@/api/worker'
 import { flowOutbound } from '@/api/flow'
+import { printSlip } from '@/utils/print'
 import ItemPicker from '@/components/ItemPicker.vue'
 
 const workerId = ref(null)
@@ -56,9 +64,18 @@ const selectedItems = ref([])
 const remark = ref('')
 const loading = ref(false)
 const pickerRef = ref()
+const lastOutbound = ref(null)
+const tableRef = ref()
+const tableSelections = ref([])
 
-const openPicker = () => {
-  pickerRef.value.open()
+const openPicker = () => { pickerRef.value.open() }
+
+const onTableSelectionChange = (rows) => { tableSelections.value = rows }
+
+const batchRemove = () => {
+  const ids = new Set(tableSelections.value.map(r => r.id))
+  selectedItems.value = selectedItems.value.filter(i => !ids.has(i.id))
+  tableSelections.value = []
 }
 
 const onPickerConfirm = (items) => {
@@ -70,6 +87,7 @@ const onPickerConfirm = (items) => {
 }
 
 const handleSubmit = async () => {
+  await ElMessageBox.confirm('确认出库 ' + selectedItems.value.length + ' 件工件？', '确认', { type: 'warning' })
   loading.value = true
   try {
     await flowOutbound({
@@ -77,12 +95,32 @@ const handleSubmit = async () => {
       accessoryIds: selectedItems.value.map(i => i.id),
       remark: remark.value
     })
+    lastOutbound.value = {
+      workerName: workerList.value.find(w => w.id === workerId.value)?.name || '',
+      items: [...selectedItems.value],
+      remark: remark.value,
+      time: new Date().toLocaleString('zh-CN')
+    }
     ElMessage.success('出库成功')
     selectedItems.value = []
     remark.value = ''
-  } catch (e) { /* handled */ } finally {
-    loading.value = false
-  }
+  } catch (e) { ElMessage.error(e.response?.data?.message || e.message) } finally { loading.value = false }
+}
+
+const handlePrint = () => {
+  const d = lastOutbound.value
+  const rows = d.items.map((item, i) =>
+    `<tr><td>${i + 1}</td><td>${item.itemCode || ''}</td><td>${item.barcode || ''}</td><td>${item.categoryName || ''}</td></tr>`
+  ).join('')
+  const html = `
+    <div class="slip-header"><h1>配件出库单</h1><div class="sub">打印时间：${d.time}</div></div>
+    <div class="info-section">
+      <div class="left"><span>接收师傅：${d.workerName}</span><span>工件数量：${d.items.length} 件</span></div>
+      <div class="right"><span>备注：${d.remark || '无'}</span></div>
+    </div>
+    <table><thead><tr><th>序号</th><th>工件编号</th><th>条码</th><th>分类</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="footer"><span>经办人签字：<span class="sign"></span></span><span>接收人签字：<span class="sign"></span></span></div>`
+  printSlip('配件出库单', html)
 }
 
 onMounted(async () => {

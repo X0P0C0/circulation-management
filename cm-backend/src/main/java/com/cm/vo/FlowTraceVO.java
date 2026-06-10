@@ -1,6 +1,7 @@
 package com.cm.vo;
 
 import lombok.Data;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -21,6 +22,7 @@ public class FlowTraceVO {
         private String flowTypeDesc;
         private String fromWorkerName;
         private String toWorkerName;
+        private BigDecimal price;
         private String customerName;
         private String operator;
         private String remark;

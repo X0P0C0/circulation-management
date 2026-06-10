@@ -6,25 +6,30 @@
     </div>
 
     <el-card>
-      <el-table :data="userList" stripe border style="width: 100%">
-        <el-table-column prop="id" label="编号" width="80" align="center" />
-        <el-table-column prop="username" label="用户名" width="150" />
-        <el-table-column prop="realName" label="姓名" width="120" />
-        <el-table-column prop="roleName" label="角色" width="100" align="center">
+      <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center;">
+        <el-input v-model="keyword" placeholder="搜索用户名/姓名" clearable style="width: 250px" @keyup.enter="fetchUsers" />
+        <el-button type="primary" @click="pageNum = 1; fetchUsers()">查询</el-button>
+        <el-button @click="keyword = ''; pageNum = 1; fetchUsers()">重置</el-button>
+      </div>
+        <el-table :data="userList" stripe border style="width: 100%" :sort-multiple="true" @sort-change="handleSortChange">
+        <el-table-column prop="id" label="编号" width="80" align="center" sortable :sort-orders="['ascending', 'descending']" />
+        <el-table-column prop="username" label="用户名" width="150" sortable :sort-orders="['ascending', 'descending']" />
+        <el-table-column prop="realName" label="姓名" width="120" sortable :sort-orders="['ascending', 'descending']" />
+        <el-table-column prop="roleName" label="角色" width="100" align="center" sortable :sort-orders="['ascending', 'descending']">
           <template #default="{ row }">
             <el-tag :type="row.role === 1 ? 'danger' : 'info'" size="small">
               {{ row.roleName }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column prop="status" label="状态" width="100" align="center" sortable :sort-orders="['ascending', 'descending']">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'warning'" size="small">
               {{ row.status === 1 ? '正常' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180">
+        <el-table-column prop="createTime" label="创建时间" width="180" sortable :sort-orders="['ascending', 'descending']">
           <template #default="{ row }">
             {{ formatTime(row.createTime) }}
           </template>
@@ -41,6 +46,13 @@
           </template>
         </el-table-column>
       </el-table>
+      <div class="pagination-wrapper">
+        <span class="page-label">每页</span>
+        <el-input v-model.number="pageSizeInput" size="small" class="page-size-input" @change="onPageSizeChange" />
+        <span class="page-label">条</span>
+        <el-pagination v-model:current-page="pageNum" v-model:page-size="pageSize" :total="total" :page-sizes="[10,20,50,100]"
+          layout="total, prev, pager, next, jumper" @change="fetchUsers" background />
+      </div>
     </el-card>
 
     <!-- 新增/编辑弹窗 -->
@@ -74,10 +86,33 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useMultiSort } from '@/components/multi-sort/useMultiSort'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 
 const userList = ref([])
+const keyword = ref('')
+const total = ref(0)
+const pageNum = ref(1)
+const pageSize = ref(20)
+const pageSizeInput = ref(20)
+const { sorts: sortsRef, buildSortParams, applyLocalSort } = useMultiSort()
+
+function applyMultiSortFromTable(sortsRef, { prop, order, shift }) {
+  if (!prop || !order) { sortsRef.value = []; return }
+  const idx = sortsRef.value.findIndex((s) => s.prop === prop)
+  if (shift) {
+    if (idx === -1) sortsRef.value.push({ prop, order })
+    else sortsRef.value[idx].order = order
+  } else {
+    sortsRef.value = [{ prop, order }]
+  }
+}
+
+const handleSortChange = ({ prop, order, $event }) => {
+  applyMultiSortFromTable(sortsRef, { prop, order, shift: $event?.shiftKey })
+  fetchUsers()
+}
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const editId = ref(null)
@@ -105,9 +140,17 @@ const formatTime = (t) => {
 
 const fetchUsers = async () => {
   try {
-    const { data } = await request.get('/api/user/list')
-    userList.value = data
-  } catch (e) { /* handled */ }
+    const params = { pageNum: pageNum.value, pageSize: pageSize.value, ...buildSortParams() }
+    if (keyword.value) params.keyword = keyword.value
+    const { data } = await request.get('/api/user/page', { params })
+    userList.value = applyLocalSort(data.records)
+    total.value = data.total
+  } catch (e) { ElMessage.error(e.response?.data?.message || e.message) }
+}
+
+const onPageSizeChange = () => {
+  const v = Number(pageSizeInput.value)
+  if (v && v > 0) { pageSize.value = v; pageNum.value = 1; fetchUsers() }
 }
 
 const openDialog = (row) => {
@@ -147,7 +190,7 @@ const handleSubmit = async () => {
     }
     dialogVisible.value = false
     fetchUsers()
-  } catch (e) { /* handled */ } finally {
+  } catch (e) { ElMessage.error(e.response?.data?.message || e.message) } finally {
     submitLoading.value = false
   }
 }
@@ -159,7 +202,7 @@ const handleToggle = async (row) => {
     await request.put(`/api/user/${row.id}/toggle`)
     ElMessage.success(`${action}成功`)
     fetchUsers()
-  } catch (e) { /* handled */ }
+  } catch (e) { ElMessage.error(e.response?.data?.message || e.message) }
 }
 
 const handleDelete = async (row) => {
@@ -168,7 +211,7 @@ const handleDelete = async (row) => {
     await request.delete(`/api/user/${row.id}`)
     ElMessage.success('删除成功')
     fetchUsers()
-  } catch (e) { /* handled */ }
+  } catch (e) { ElMessage.error(e.response?.data?.message || e.message) }
 }
 
 onMounted(() => { fetchUsers() })
@@ -187,5 +230,28 @@ onMounted(() => { fetchUsers() })
 .page-title {
   margin: 0;
   font-size: 18px;
+}
+
+.pagination-wrapper {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: 28px;
+}
+.pagination-wrapper .page-label {
+  font-size: 12px;
+  color: #909399;
+  margin: 0 4px;
+  line-height: 28px;
+}
+.pagination-wrapper .page-size-input {
+  width: 52px;
+}
+.pagination-wrapper :deep(.el-pagination) {
+  margin-left: 12px;
+  height: 28px;
+  display: flex;
+  align-items: center;
 }
 </style>

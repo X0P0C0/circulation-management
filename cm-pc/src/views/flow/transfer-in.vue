@@ -13,15 +13,25 @@
         </el-form-item>
         <el-form-item v-if="returnType === 2" label="工件价值">
           <el-radio-group v-model="highValue">
-            <el-radio :value="false">低价值（≤200元，退回可支配库）</el-radio>
+            <el-radio :value="false">低价值（≤200元，退回可配库）</el-radio>
             <el-radio :value="true">高价值（&gt;200元，寄回厂家）</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item label="指定师傅" required>
+          <el-select v-model="workerId" placeholder="请选择师傅（归还来源）" filterable style="width: 100%" @focus="loadWorkerData">
+            <el-option v-for="w in workerList" :key="w.id" :label="w.name" :value="w.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="选择工件">
-          <el-button type="primary" @click="openPicker">添加工件</el-button>
+          <el-button type="primary" :disabled="!workerId" @click="openPicker">添加工件</el-button>
         </el-form-item>
         <el-form-item v-if="selectedItems.length" label="归还清单">
-          <el-table :data="selectedItems" stripe border style="width: 100%">
+          <div style="margin-bottom: 10px" v-if="tableSelections.length">
+            <el-button type="danger" size="small" @click="batchRemove">批量移除（{{ tableSelections.length }}）</el-button>
+          </div>
+          <el-table ref="tableRef" :data="selectedItems" stripe border style="width: 100%"
+            @selection-change="onTableSelectionChange">
+            <el-table-column type="selection" width="45" align="center" />
             <el-table-column type="index" label="序号" width="60" align="center" />
             <el-table-column prop="itemCode" label="工件编号" width="180" />
             <el-table-column prop="barcode" label="条码" />
@@ -46,24 +56,39 @@
     </el-card>
 
     <ItemPicker ref="pickerRef" title="选择要归还的工件" :multiple="true" :default-status="2"
-      :show-status="false" :exclude-ids="selectedItems.map(i => i.id)" @confirm="onPickerConfirm" />
+      :show-status="false" :show-worker-filter="true" :worker-id="workerId"
+      :exclude-ids="selectedItems.map(i => i.id)" :exclude-barcodes="selectedItems.map(i => i.barcode)"
+      @confirm="onPickerConfirm" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted } from 'vue'
+import { getAllWorkers } from '@/api/worker'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { flowReturn } from '@/api/flow'
 import ItemPicker from '@/components/ItemPicker.vue'
 
 const returnType = ref(1)
 const highValue = ref(false)
 const selectedItems = ref([])
+const workerId = ref(null)
+const workerList = ref([])
 const remark = ref('')
 const loading = ref(false)
 const pickerRef = ref()
+const tableRef = ref()
+const tableSelections = ref([])
 
 const openPicker = () => { pickerRef.value.open() }
+
+const onTableSelectionChange = (rows) => { tableSelections.value = rows }
+
+const batchRemove = () => {
+  const ids = new Set(tableSelections.value.map(r => r.id))
+  selectedItems.value = selectedItems.value.filter(i => !ids.has(i.id))
+  tableSelections.value = []
+}
 
 const onPickerConfirm = (items) => {
   items.forEach(item => {
@@ -74,6 +99,7 @@ const onPickerConfirm = (items) => {
 }
 
 const handleSubmit = async () => {
+  await ElMessageBox.confirm('确认归还 ' + selectedItems.value.length + ' 件工件？', '确认', { type: 'warning' })
   loading.value = true
   try {
     await flowReturn({
@@ -85,10 +111,12 @@ const handleSubmit = async () => {
     ElMessage.success('归还成功')
     selectedItems.value = []
     remark.value = ''
-  } catch (e) { /* handled */ } finally {
-    loading.value = false
-  }
+  } catch (e) { ElMessage.error(e.response?.data?.message || e.message) } finally { loading.value = false }
 }
+
+onMounted(async () => {
+  try { const { data } = await getAllWorkers(); workerList.value = data } catch (e) { /* ignore */ }
+})
 </script>
 
 <style scoped>

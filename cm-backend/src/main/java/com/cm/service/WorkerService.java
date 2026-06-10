@@ -11,6 +11,7 @@ public interface WorkerService extends IService<Worker> {
     void create(WorkerDTO dto);
     void update(Long id, WorkerDTO dto);
     void delete(Long id);
-    PageResult<WorkerVO> listPage(String keyword, Integer pageNum, Integer pageSize);
+    PageResult<WorkerVO> listPage(String keyword, String sortFields, String sortOrders,
+                                 Integer pageNum, Integer pageSize);
     List<WorkerVO> listAll();
 }

@@ -1,0 +1,1 @@
+import{w as e}from"./index-DfL-chAK.js";function a(r){return e.get("/api/workers",{params:r})}function n(){return e.get("/api/workers/all")}function s(r){return e.post("/api/workers",r)}function u(r,t){return e.put("/api/workers/"+r,t)}function i(r){return e.delete("/api/workers/"+r)}export{a,s as c,i as d,n as g,u};

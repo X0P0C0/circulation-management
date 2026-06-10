@@ -56,7 +56,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref()
 const loading = ref(false)
-const form = reactive({ username: '', password: '' })
+const form = reactive({ username: 'admin', password: 'admin123' })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
@@ -69,7 +69,7 @@ const handleLogin = async () => {
     await userStore.login(form)
     ElMessage.success('登录成功')
     router.push('/')
-  } catch (e) { /* handled */ } finally {
+  } catch (e) { ElMessage.error(e.response?.data?.message || e.message) } finally {
     loading.value = false
   }
 }

@@ -20,6 +20,7 @@ public interface FlowService {
 
     /** 工件追溯 */
     FlowTraceVO trace(String itemCode);
+    FlowTraceVO traceByBarcode(String barcode);
 
     /** 流转记录查询 */
     PageResult<?> listRecords(Integer flowType, Long workerId, String keyword,

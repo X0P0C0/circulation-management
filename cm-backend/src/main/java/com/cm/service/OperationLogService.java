@@ -6,6 +6,8 @@ import com.cm.entity.OperationLog;
 
 public interface OperationLogService extends IService<OperationLog> {
     void log(String actionType, String content, String barcode, Long workerId, String operator, String ip);
-    PageResult<OperationLog> listPage(String actionType, String startDate, String endDate,
-                                       Integer pageNum, Integer pageSize);
+    PageResult<OperationLog> listPage(String actionType, String operator, String barcode,
+                                      String startDate, String endDate,
+                                      String sortFields, String sortOrders,
+                                      Integer pageNum, Integer pageSize);
 }

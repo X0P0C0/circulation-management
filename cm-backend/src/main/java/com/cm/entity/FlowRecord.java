@@ -2,6 +2,7 @@ package com.cm.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -18,6 +19,7 @@ public class FlowRecord {
     private String fromWorkerName;
     private Long toWorkerId;
     private String toWorkerName;
+    private BigDecimal price;
     private String customerName;
     private String customerPhone;
     private String remark;

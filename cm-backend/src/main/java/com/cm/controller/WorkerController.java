@@ -38,9 +38,11 @@ public class WorkerController {
     @GetMapping
     public Result<PageResult<WorkerVO>> list(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sortFields,
+            @RequestParam(required = false) String sortOrders,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        return Result.ok(workerService.listPage(keyword, pageNum, pageSize));
+        return Result.ok(workerService.listPage(keyword, sortFields, sortOrders, pageNum, pageSize));
     }
 
     @GetMapping("/all")

@@ -1,0 +1,17 @@
+[Unit]
+Description=CM Backend API Service
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/cm
+ExecStart=/usr/bin/java -jar /opt/cm/app/cm-backend-1.0.0.jar --spring.profiles.active=prod
+ExecStop=/bin/kill -s TERM $MAINPID
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

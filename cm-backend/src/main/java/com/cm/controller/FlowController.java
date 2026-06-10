@@ -55,6 +55,11 @@ public class FlowController {
         return Result.ok(flowService.trace(itemCode));
     }
 
+    @GetMapping("/trace")
+    public Result<FlowTraceVO> traceByBarcode(@RequestParam String barcode) {
+        return Result.ok(flowService.traceByBarcode(barcode));
+    }
+
     @GetMapping("/records")
     public Result<PageResult<?>> records(
             @RequestParam(required = false) Integer flowType,

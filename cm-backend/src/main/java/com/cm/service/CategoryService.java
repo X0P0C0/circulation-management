@@ -1,13 +1,20 @@
 package com.cm.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import com.cm.dto.CategoryDTO;
 import com.cm.entity.Category;
-import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
-public interface CategoryService extends IService<Category> {
-    void create(CategoryDTO dto);
-    void update(Long id, CategoryDTO dto);
+import java.util.List;
+import java.util.Map;
+
+public interface CategoryService extends com.baomidou.mybatisplus.extension.service.IService<Category> {
+    void create(com.cm.dto.CategoryDTO dto);
+    void update(Long id, com.cm.dto.CategoryDTO dto);
     void delete(Long id);
-    List<Category> listAll();
+    void moveSort(Long id, String direction);
+    void resort();
+    List<Category> listAll(String keyword, String sortFields, String sortOrders);
+    List<Category> getTopCategories();
+    void batchSort(List<Long> ids);
+
 }
+

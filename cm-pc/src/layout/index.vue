@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="app-layout">
     <aside class="sidebar" :class="{ collapsed: isCollapsed }">
       <div class="sidebar-logo">
@@ -15,17 +15,28 @@
         :collapse-transition="false"
         router
         class="sidebar-menu"
+        :default-openeds="defaultOpeneds"
       >
-        <template v-for="route in menuRoutes" :key="route.path">
-          <el-menu-item :index="'/' + route.path">
-            <el-icon><component :is="route.meta?.icon" /></el-icon>
-            <template #title>{{ route.meta?.title }}</template>
+        <template v-for="group in menuGroups" :key="group.name">
+          <el-sub-menu v-if="group.children.length > 1" :index="'group-' + group.name">
+            <template #title>
+              <el-icon><component :is="group.icon" /></el-icon>
+              <span>{{ group.name }}</span>
+            </template>
+            <el-menu-item v-for="route in group.children" :key="route.path" :index="'/' + route.path">
+              <el-icon><component :is="route.meta?.icon" /></el-icon>
+              <template #title>{{ route.meta?.title }}</template>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-menu-item v-else :index="'/' + group.children[0].path">
+            <el-icon><component :is="group.children[0].meta?.icon" /></el-icon>
+            <template #title>{{ group.children[0].meta?.title }}</template>
           </el-menu-item>
         </template>
       </el-menu>
       <div class="sidebar-footer">
         <el-icon :size="14"><InfoFilled /></el-icon>
-        <span v-show="!isCollapsed">v1.0.0</span>
+        <span v-show="!isCollapsed">v1.0.24</span>
       </div>
     </aside>
 
@@ -105,6 +116,7 @@
         <el-button type="primary" :loading="pwdLoading" @click="handleChangePassword">确认修改</el-button>
       </template>
     </el-dialog>
+    <DevDesignTool />
   </div>
 </template>
 
@@ -114,6 +126,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store'
 import { changePassword } from '@/api/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import DevDesignTool from '@/components/DevDesignTool.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -123,13 +136,37 @@ const isCollapsed = ref(false)
 const activeMenu = computed(() => route.path)
 const currentRoute = computed(() => route)
 
-const menuRoutes = computed(() => {
+const groupConfig = {
+  '概览': { icon: 'HomeFilled', order: 0 },
+  '业务操作': { icon: 'Operation', order: 1 },
+  '库存管理': { icon: 'Box', order: 2 },
+  '基础数据': { icon: 'Setting', order: 3 },
+  '系统管理': { icon: 'Tools', order: 4 }
+}
+
+const defaultOpeneds = computed(() => menuGroups.value.map(g => 'group-' + g.name))
+
+const menuGroups = computed(() => {
   const mainRoute = router.options.routes.find(r => r.path === '/')
-  const allRoutes = mainRoute?.children?.filter(r => !r.meta?.hidden) || []
+  if (!mainRoute) return []
+  let children = mainRoute.children.filter(r => !r.meta?.hidden)
   if (userStore.role !== 1) {
-    return allRoutes.filter(r => !r.meta?.adminOnly)
+    children = children.filter(r => !r.meta?.adminOnly)
   }
-  return allRoutes
+  const groups = {}
+  children.forEach(r => {
+    const groupName = r.meta?.group || '其他'
+    if (!groups[groupName]) groups[groupName] = []
+    groups[groupName].push(r)
+  })
+  return Object.entries(groups)
+    .map(([name, items]) => ({
+      name,
+      icon: groupConfig[name]?.icon || 'Menu',
+      order: groupConfig[name]?.order ?? 99,
+      children: items
+    }))
+    .sort((a, b) => a.order - b.order)
 })
 
 const handleCommand = (cmd) => {
@@ -260,6 +297,42 @@ const handleChangePassword = async () => {
       color: #ffffff;
       font-weight: 600;
       box-shadow: 0 2px 8px rgba(67, 97, 238, 0.35);
+    }
+  }
+
+  :deep(.el-sub-menu) {
+    margin-bottom: 2px;
+
+    .el-sub-menu__title {
+      color: #94a3b8;
+      border-radius: 8px;
+      height: 44px;
+      line-height: 44px;
+      transition: all 0.2s;
+
+      .el-icon {
+        font-size: 18px;
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: #e2e8f0;
+      }
+    }
+
+    .el-sub-menu__icon-arrow {
+      color: #64748b;
+    }
+
+    .el-menu {
+      background: transparent;
+      padding: 0;
+    }
+
+    .el-menu .el-menu-item {
+      padding-left: 52px;
+      height: 40px;
+      line-height: 40px;
     }
   }
 

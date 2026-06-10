@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -43,8 +44,49 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
     }
 
     @Override
-    public List<Category> listAll() {
-        return list(new LambdaQueryWrapper<Category>()
-                .eq(Category::getStatus, 1).orderByAsc(Category::getSort));
+    public void moveSort(Long id, String direction) {
+        Category cat = getById(id);
+        if (cat == null) return;
+        LambdaQueryWrapper<Category> w = new LambdaQueryWrapper<>();
+        w.eq(Category::getParentId, cat.getParentId()).eq(Category::getStatus, 1);
+        if ("up".equals(direction)) {
+            w.lt(Category::getSort, cat.getSort()).orderByDesc(Category::getSort).last("LIMIT 1");
+        } else {
+            w.gt(Category::getSort, cat.getSort()).orderByAsc(Category::getSort).last("LIMIT 1");
+        }
+        Category target = getOne(w);
+        if (target != null) {
+            int tmp = cat.getSort(); cat.setSort(target.getSort()); target.setSort(tmp);
+            updateById(cat); updateById(target);
+        }
+    }
+
+    @Override
+    public void resort() {
+        List<Category> cats = list(new LambdaQueryWrapper<Category>().eq(Category::getStatus, 1).orderByAsc(Category::getSort));
+        for (int i = 0; i < cats.size(); i++) { cats.get(i).setSort(i + 1); updateById(cats.get(i)); }
+    }
+
+    @Override
+    public List<Category> listAll(String keyword, String sortFields, String sortOrders) {
+        LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w.like(Category::getName, keyword).or().like(Category::getPartNumber, keyword));
+        }
+        wrapper.eq(Category::getStatus, 1).orderByAsc(Category::getSort);
+        return list(wrapper);
+    }
+
+    @Override
+    public List<Category> getTopCategories() {
+        return list(new LambdaQueryWrapper<Category>().eq(Category::getParentId, 0).eq(Category::getStatus, 1).orderByAsc(Category::getSort));
+    }
+
+    @Override
+    public void batchSort(List<Long> ids) {
+        for (int i = 0; i < ids.size(); i++) {
+            Category c = getById(ids.get(i));
+            if (c != null) { c.setSort(i + 1); updateById(c); }
+        }
     }
 }

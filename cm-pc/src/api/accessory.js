@@ -16,6 +16,22 @@ export function searchAccessories(params) {
   return request.get('/api/accessories/search', { params })
 }
 
+export function importAccessories(formData) {
+  return request.post('/api/accessories/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+}
+
 export function getInventoryGroup(params) {
   return request.get('/api/accessories/inventory-group', { params })
+}
+
+export function deleteAccessory(id) {
+  return request.delete('/api/accessories/' + id)
+}
+
+export function updateAccessory(data) {
+  return request.put('/api/accessories', data)
+}
+
+export function importExcel(formData) {
+  return request.post('/api/accessories/import-excel', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
 }

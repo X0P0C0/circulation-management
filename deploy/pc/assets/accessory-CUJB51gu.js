@@ -1,0 +1,1 @@
+import{w as e}from"./index-DfL-chAK.js";function o(s){return e.post("/api/accessories/inbound",s)}function t(s){return e.get("/api/accessories/search",{params:s})}function i(s){return e.post("/api/accessories/import",s,{headers:{"Content-Type":"multipart/form-data"}})}function n(s){return e.get("/api/accessories/inventory-group",{params:s})}export{o as a,n as g,i,t as s};

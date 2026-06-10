@@ -10,12 +10,12 @@
           @keyup.enter="loadData" />
         <el-button type="primary" @click="loadData">查询</el-button>
       </div>
-      <el-table :data="list" stripe border v-loading="loading">
+      <el-table :data="list" stripe border v-loading="loading" :sort-multiple="true" @sort-change="handleSortChange">
         <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="name" label="姓名" />
-        <el-table-column prop="jobNo" label="工号" />
-        <el-table-column prop="phone" label="电话" />
-        <el-table-column prop="remark" label="备注" show-overflow-tooltip />
+        <el-table-column prop="name" label="姓名" sortable :sort-orders="['ascending', 'descending']" />
+        <el-table-column prop="jobNo" label="工号" sortable :sort-orders="['ascending', 'descending']" />
+        <el-table-column prop="phone" label="电话" sortable :sort-orders="['ascending', 'descending']" />
+        <el-table-column prop="remark" label="备注" show-overflow-tooltip sortable :sort-orders="['ascending', 'descending']" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDialog(row)">编辑</el-button>
@@ -52,8 +52,29 @@
       </template>
     </el-dialog>
 
-    <el-drawer v-model="drawerVisible" :title="drawerTitle" size="650px">
-      <el-table :data="workerItems" stripe border empty-text="暂无配件">
+    <el-drawer v-model="drawerVisible" :title="drawerTitle" size="750px">
+      <template #header>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:16px;font-weight:600">{{ drawerTitle }}</span>
+          <el-radio-group v-model="inventoryView" size="small">
+            <el-radio-button value="detail">明细</el-radio-button>
+            <el-radio-button value="summary">汇总</el-radio-button>
+          </el-radio-group>
+          <el-button v-if="inventoryFilter" size="small" @click="inventoryFilter = null">返回汇总</el-button>
+        </div>
+      </template>
+      <el-table v-if="inventoryView === 'summary' && !inventoryFilter" :data="inventoryGrouped" stripe border empty-text="暂无配件"
+        highlight-current-row :row-style="{ cursor: 'pointer' }" @row-click="onInventoryGroupClick">
+        <el-table-column type="index" label="序号" width="55" align="center" />
+        <el-table-column prop="barcode" label="条码" />
+        <el-table-column prop="categoryName" label="分类" width="120" />
+        <el-table-column prop="count" label="数量" width="80" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" type="primary">{{ row.count }}</el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-table v-else :data="inventoryFilteredItems" stripe border empty-text="暂无配件">
         <el-table-column type="index" label="序号" width="55" align="center" />
         <el-table-column prop="itemCode" label="工件编号" width="180" />
         <el-table-column prop="barcode" label="条码" />
@@ -64,12 +85,30 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useMultiSort } from '@/components/multi-sort/useMultiSort'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getWorkers, createWorker, updateWorker, deleteWorker } from '@/api/worker'
 import { searchAccessories } from '@/api/accessory'
 
 const list = ref([])
+const { sorts: sortsRef, buildSortParams, applyLocalSort } = useMultiSort()
+
+function applyMultiSortFromTable(sortsRef, { prop, order, shift }) {
+  if (!prop || !order) { sortsRef.value = []; return }
+  const idx = sortsRef.value.findIndex((s) => s.prop === prop)
+  if (shift) {
+    if (idx === -1) sortsRef.value.push({ prop, order })
+    else sortsRef.value[idx].order = order
+  } else {
+    sortsRef.value = [{ prop, order }]
+  }
+}
+
+const handleSortChange = ({ prop, order, $event }) => {
+  applyMultiSortFromTable(sortsRef, { prop, order, shift: $event?.shiftKey })
+  loadData()
+}
 const loading = ref(false)
 const keyword = ref('')
 const pageNum = ref(1)
@@ -84,14 +123,16 @@ const formRules = { name: [{ required: true, message: '请输入师傅姓名', t
 const drawerVisible = ref(false)
 const drawerTitle = ref('')
 const workerItems = ref([])
+const inventoryView = ref('detail')
+const inventoryFilter = ref(null)
 
 const loadData = async () => {
   loading.value = true
   try {
-    const { data } = await getWorkers({ keyword: keyword.value, pageNum: pageNum.value, pageSize: pageSize.value })
-    list.value = data.records
+    const { data } = await getWorkers({ keyword: keyword.value, pageNum: pageNum.value, pageSize: pageSize.value, ...buildSortParams() })
+    list.value = applyLocalSort(data.records)
     total.value = data.total
-  } catch (e) { /* handled */ } finally { loading.value = false }
+  } catch (e) { ElMessage.error(e.response?.data?.message || e.message) } finally { loading.value = false }
 }
 
 const openDialog = (row) => {
@@ -109,7 +150,7 @@ const handleSubmit = async () => {
     ElMessage.success(editId.value ? '修改成功' : '新增成功')
     dialogVisible.value = false
     loadData()
-  } catch (e) { /* handled */ } finally { submitting.value = false }
+  } catch (e) { ElMessage.error(e.response?.data?.message || e.message) } finally { submitting.value = false }
 }
 
 const handleDelete = async (row) => {
@@ -118,16 +159,36 @@ const handleDelete = async (row) => {
     await deleteWorker(row.id)
     ElMessage.success('删除成功')
     loadData()
-  } catch (e) { /* handled */ }
+  } catch (e) { ElMessage.error(e.response?.data?.message || e.message) }
 }
 
 const viewInventory = async (row) => {
   drawerTitle.value = row.name + ' - 持有工件'
+  inventoryView.value = 'summary'
+  inventoryFilter.value = null
   drawerVisible.value = true
   try {
     const { data } = await searchAccessories({ workerId: row.id, status: 2, pageNum: 1, pageSize: 100 })
     workerItems.value = data.records
-  } catch (e) { /* handled */ }
+  } catch (e) { ElMessage.error(e.response?.data?.message || e.message) }
+}
+
+const inventoryGrouped = computed(() => {
+  const map = {}
+  workerItems.value.forEach(item => {
+    if (!map[item.barcode]) map[item.barcode] = { barcode: item.barcode, categoryName: item.categoryName, count: 0 }
+    map[item.barcode].count++
+  })
+  return Object.values(map)
+})
+
+const inventoryFilteredItems = computed(() => {
+  if (!inventoryFilter.value) return workerItems.value
+  return workerItems.value.filter(item => item.barcode === inventoryFilter.value)
+})
+
+const onInventoryGroupClick = (row) => {
+  inventoryFilter.value = row.barcode
 }
 
 onMounted(() => loadData())

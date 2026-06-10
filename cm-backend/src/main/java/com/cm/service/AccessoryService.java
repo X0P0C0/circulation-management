@@ -2,28 +2,32 @@ package com.cm.service;
 
 import com.cm.common.result.PageResult;
 import com.cm.dto.AccessoryInboundDTO;
+import com.cm.dto.AccessoryUpdateDTO;
 import com.cm.vo.AccessoryVO;
 import com.cm.vo.InventoryGroupVO;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
+import java.util.Map;
 
 public interface AccessoryService {
-    /** 入库：创建工件，自动生成工件编号 */
-    AccessoryVO inbound(AccessoryInboundDTO dto, String operator);
-
-    /** 按ID查询工件 */
+    /** 入库：创建工件，自动生成工件编号，返回所有创建的工件 */
+    List<AccessoryVO> inbound(AccessoryInboundDTO dto, String operator);
     AccessoryVO findById(Long id);
-
-    /** 按条码查询工件（用于扫码） */
     AccessoryVO findByBarcode(String barcode);
-
-    /** 统一搜索接口 */
-    PageResult<AccessoryVO> search(String barcode, Long categoryId, Integer status,
+    List<AccessoryVO> importFromCsv(MultipartFile file, Long categoryId, String remark, String operator);
+    PageResult<AccessoryVO> search(String barcode, Long categoryId, Integer status, Integer statusNot,
                                     Long workerId, String keyword,
-                                    String sortField, String sortOrder,
+                                    String operator, String remark, Integer highValue, Long shelfId,
+                                    String startDate, String endDate,
+                                    String sortFields, String sortOrders,
                                     Integer pageNum, Integer pageSize);
-
-    /** 按条码分组的库存视图 */
+    void deleteById(Long id);
+    AccessoryVO update(AccessoryUpdateDTO dto, String operator);
     PageResult<InventoryGroupVO> inventoryGroup(String barcode, Long categoryId,
                                                   Integer statusFilter, Long workerId,
+                                                  String remark, Integer highValue, Long shelfId,
+                                                  String startDate, String endDate,
                                                   Integer pageNum, Integer pageSize);
+        Map<String, Object> importFromExcel(MultipartFile file, String operator);
 }
+

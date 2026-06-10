@@ -1,0 +1,12 @@
+﻿USE cm_db;
+DELETE FROM operation_log;
+DELETE FROM flow_record;
+DELETE FROM accessory;
+DELETE FROM worker;
+ALTER TABLE accessory AUTO_INCREMENT = 1;
+ALTER TABLE flow_record AUTO_INCREMENT = 1;
+ALTER TABLE worker AUTO_INCREMENT = 1;
+ALTER TABLE operation_log AUTO_INCREMENT = 1;
+INSERT INTO worker (name, job_no, phone) VALUES ('张建国', 'W001', '13800001111'), ('李明', 'W002', '13800002222'), ('王强', 'W003', '13800003333');
+INSERT INTO accessory (barcode, item_code, category_id, status, operator, create_time) VALUES ('*0401715DL', 'AC20260525-001', 1, 1, 'admin', '2026-05-25 09:00:00'), ('*0401715DL', 'AC20260525-002', 1, 1, 'admin', '2026-05-25 09:01:00'), ('*0401715DL', 'AC20260525-003', 1, 1, 'admin', '2026-05-25 09:02:00'), ('6612998', 'AC20260525-004', 2, 1, 'admin', '2026-05-25 10:00:00'), ('6612998', 'AC20260525-005', 2, 1, 'admin', '2026-05-25 10:01:00'), ('PCB-2024-A', 'AC20260525-006', 3, 1, 'admin', '2026-05-25 11:00:00'), ('PCB-2024-A', 'AC20260525-007', 3, 1, 'admin', '2026-05-25 11:01:00'), ('PCB-2024-A', 'AC20260525-008', 3, 1, 'admin', '2026-05-25 11:02:00'), ('MOTOR-370', 'AC20260525-009', 4, 1, 'admin', '2026-05-25 12:00:00'), ('MOTOR-370', 'AC20260525-010', 4, 1, 'admin', '2026-05-25 12:01:00'), ('SEAL-080', 'AC20260526-001', 5, 1, 'admin', '2026-05-26 09:00:00'), ('SEAL-080', 'AC20260526-002', 5, 1, 'admin', '2026-05-26 09:01:00'), ('SEAL-080', 'AC20260526-003', 5, 1, 'admin', '2026-05-26 09:02:00'), ('TOOL-SET-A', 'AC20260526-004', 6, 1, 'admin', '2026-05-26 10:00:00'), ('TOOL-SET-A', 'AC20260526-005', 6, 1, 'admin', '2026-05-26 10:01:00');
+SELECT COUNT(*) AS worker_count FROM worker;

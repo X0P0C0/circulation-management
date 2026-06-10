@@ -1,6 +1,9 @@
 package com.cm.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.cm.common.result.PageResult;
+import com.cm.common.util.SortUtils;
 import com.cm.common.exception.BusinessException;
 import com.cm.dto.UserDTO;
 import com.cm.entity.User;
@@ -12,7 +15,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +33,26 @@ public class UserServiceImpl implements UserService {
         List<User> users = userMapper.selectList(
                 new LambdaQueryWrapper<User>().orderByAsc(User::getId));
         return users.stream().map(this::toVO).collect(Collectors.toList());
+    }
+
+    @Override
+    public PageResult<UserVO> listPage(String keyword, String sortFields, String sortOrders,
+                                       Integer pageNum, Integer pageSize) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.and(w -> w.like(User::getUsername, keyword)
+                    .or().like(User::getRealName, keyword));
+        }
+        Map<String, SFunction<User, ?>> sortMapper = new HashMap<>();
+        sortMapper.put("id", User::getId);
+        sortMapper.put("username", User::getUsername);
+        sortMapper.put("realName", User::getRealName);
+        sortMapper.put("status", User::getStatus);
+        sortMapper.put("createTime", User::getCreateTime);
+        SortUtils.applyMultiSort(wrapper, sortFields, sortOrders, sortMapper, User::getId, true);
+        Page<User> page = userMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        List<UserVO> records = page.getRecords().stream().map(this::toVO).collect(Collectors.toList());
+        return new PageResult<>(records, page.getTotal(), pageNum, pageSize);
     }
 
     @Override

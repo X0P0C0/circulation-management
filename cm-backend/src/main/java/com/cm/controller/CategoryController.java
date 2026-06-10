@@ -34,8 +34,35 @@ public class CategoryController {
         return Result.success();
     }
 
+    @PutMapping("/{id}/move")
+    public Result<Void> moveSort(@PathVariable Long id, @RequestParam String direction) {
+        categoryService.moveSort(id, direction);
+        return Result.success();
+    }
+
+    @PutMapping("/batch-sort")
+    public Result<Void> batchSort(@RequestBody List<Long> ids) {
+        categoryService.batchSort(ids);
+        return Result.success();
+    }
+
     @GetMapping
-    public Result<List<Category>> list() {
-        return Result.success(categoryService.listAll());
+("/top")
+    public Result<List<Category>> getTopCategories() {
+        return Result.success(categoryService.getTopCategories());
+    }
+
+    @PutMapping("/resort")
+    public Result<Void> resort() {
+        categoryService.resort();
+        return Result.success();
+    }
+
+    @GetMapping
+    public Result<List<Category>> list(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sortFields,
+            @RequestParam(required = false) String sortOrders) {
+        return Result.success(categoryService.listAll(keyword, sortFields, sortOrders));
     }
 }

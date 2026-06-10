@@ -23,6 +23,12 @@ public class Accessory {
     private String relatedItemCode;
     /** 1=高价值 0=低价值（退件时） */
     private Integer isHighValue;
+    @Version
+    private Integer version;
+    /** 货架ID */
+    private Long shelfId;
+    @TableField(exist = false)
+    private String shelfName;
     private String operator;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;

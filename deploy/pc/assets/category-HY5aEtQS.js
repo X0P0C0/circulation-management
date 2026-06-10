@@ -1,0 +1,1 @@
+import{w as t}from"./index-DfL-chAK.js";function o(e){return t.get("/api/categories",{params:e})}function i(e){return t.post("/api/categories",e)}function n(e,r){return t.put("/api/categories/"+e,r)}function s(e){return t.delete("/api/categories/"+e)}export{i as c,s as d,o as g,n as u};

@@ -1,5 +1,6 @@
 package com.cm.controller;
 
+import com.cm.common.result.PageResult;
 import com.cm.common.result.Result;
 import com.cm.dto.UserDTO;
 import com.cm.service.UserService;
@@ -19,6 +20,16 @@ public class UserController {
     @GetMapping("/list")
     public Result<List<UserVO>> list() {
         return Result.ok(userService.listAll());
+    }
+
+    @GetMapping("/page")
+    public Result<PageResult<UserVO>> page(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sortFields,
+            @RequestParam(required = false) String sortOrders,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        return Result.ok(userService.listPage(keyword, sortFields, sortOrders, pageNum, pageSize));
     }
 
     @PostMapping
