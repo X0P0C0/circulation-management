@@ -1,4 +1,4 @@
-﻿# === Java / Maven ===
+# === Java / Maven ===
 target/
 *.class
 *.jar
@@ -43,3 +43,22 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+
+# 临时调试脚本
+fix_*.py
+find_*.py
+check_*.py
+search_*.py
+rewrite_*.py
+gen_sql.py
+find_back*.py
+
+# 构建产物
+cm-pc/dist.zip
+cm-pc/make-zip.py
+output/
+
+# 工具临时文件
+.playwright-cli/
+cm-h5/*.timestamp*
+cm-app/
