@@ -12,7 +12,8 @@ public enum FlowTypeEnum {
     RETURN_CANCEL_LOW(4, "归还(取消-退回)"),
     RETURN_CANCEL_HIGH(5, "归还(取消-寄回厂家)"),
     SELL(6, "售卖"),
-    TRANSFER(7, "转移");
+    TRANSFER(7, "转移"),
+    DELETE(8, "删除");
 
     private final int code;
     private final String desc;

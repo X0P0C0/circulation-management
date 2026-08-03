@@ -35,3 +35,11 @@ export function updateAccessory(data) {
 export function importExcel(formData) {
   return request.post('/api/accessories/import-excel', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
 }
+
+export function getAccessoriesByIds(ids) {
+  return request.post('/api/accessories/batch', ids)
+}
+
+export function getAccessoriesByItemCodes(itemCodes) {
+  return request.post('/api/accessories/batch-by-code', itemCodes)
+}

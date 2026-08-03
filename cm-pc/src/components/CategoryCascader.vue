@@ -26,7 +26,8 @@
         <div class="cascader-col">
           <div class="cascader-col-title">小类</div>
           <div class="cascader-search">
-            <input v-model="searchText" placeholder="搜索小类..." class="cascader-search-input" />
+            <input v-model="searchText" placeholder="搜索小类名称..." class="cascader-search-input" />
+            <input v-model="partNumberFilter" placeholder="按专用号筛选..." class="cascader-search-input cascader-search-input--part" />
           </div>
           <div class="cascader-items">
             <template v-if="selectedTopId">
@@ -52,15 +53,23 @@ const emit = defineEmits(['update:modelValue'])
 
 const showPanel = ref(false)
 const searchText = ref('')
+const partNumberFilter = ref('')
 const allCategories = ref([])
 const selectedTopId = ref(null)
 
 const topCategories = computed(() => allCategories.value.filter(c => c.parentId === 0))
 const subCategories = computed(() => allCategories.value.filter(c => c.parentId === selectedTopId.value))
 const filteredSubCategories = computed(() => {
-  if (!searchText.value) return subCategories.value
-  const kw = searchText.value.toLowerCase()
-  return subCategories.value.filter(c => c.name.toLowerCase().includes(kw) || (c.partNumber && c.partNumber.toLowerCase().includes(kw)))
+  let list = subCategories.value
+  if (searchText.value) {
+    const kw = searchText.value.toLowerCase()
+    list = list.filter(c => c.name.toLowerCase().includes(kw) || (c.partNumber && c.partNumber.toLowerCase().includes(kw)))
+  }
+  if (partNumberFilter.value) {
+    const pn = partNumberFilter.value.toLowerCase()
+    list = list.filter(c => c.partNumber && c.partNumber.toLowerCase().includes(pn))
+  }
+  return list
 })
 
 const selectedLabel = computed(() => {
@@ -73,8 +82,8 @@ const selectedLabel = computed(() => {
 
 function togglePanel() { showPanel.value = !showPanel.value }
 function selectTop(top) { selectedTopId.value = top.id; searchText.value = '' }
-function selectSub(sub) { emit('update:modelValue', sub.id); showPanel.value = false; searchText.value = '' }
-function clearSelection() { emit('update:modelValue', null); selectedTopId.value = null; searchText.value = '' }
+function selectSub(sub) { emit('update:modelValue', sub.id); showPanel.value = false; searchText.value = ''; partNumberFilter.value = '' }
+function clearSelection() { emit('update:modelValue', null); selectedTopId.value = null; searchText.value = ''; partNumberFilter.value = '' }
 
 watch(() => props.modelValue, (val) => {
   if (val) {
@@ -128,6 +137,7 @@ defineExpose({ refresh: loadData })
 .cascader-search { padding: 6px 8px; border-bottom: 1px solid #e4e7ed; }
 .cascader-search-input { width: 100%; height: auto; padding: 6px 10px; margin: 0; font-size: 13px; border-radius: 4px; background: #fff; border: 1px solid #dcdfe6; outline: none; box-sizing: border-box; }
 .cascader-search-input:focus { border-color: #409eff; }
+.cascader-search-input--part { margin-top: 4px; }
 .cascader-items { max-height: 400px; overflow-y: auto; overflow-x: hidden; padding: 4px 0; flex: 1; }
 .cascader-item { width: 220.8px; height: 25px; padding: 10px 12px; margin: 0; font-size: 14px; border-radius: 0; background: #f5f7fa; display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #606266; }
 .cascader-item:hover { background: #ecf5ff; color: #409eff; }

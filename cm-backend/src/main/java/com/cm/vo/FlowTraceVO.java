@@ -12,6 +12,7 @@ public class FlowTraceVO {
     private String categoryName;
     private Integer currentStatus;
     private String currentStatusDesc;
+    private Integer deleted;
     private String currentHolder;
     private List<FlowStep> steps;
 

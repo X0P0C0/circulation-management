@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cm.common.result.PageResult;
 import com.cm.entity.OperationLog;
+import com.cm.vo.OperationLogVO;
 import com.cm.mapper.OperationLogMapper;
 import com.cm.service.OperationLogService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -21,11 +23,13 @@ import java.util.Map;
 public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, OperationLog> implements OperationLogService {
 
     @Override
-    public void log(String actionType, String content, String barcode, Long workerId, String operator, String ip) {
+    public void log(String actionType, String content, Long accessoryId, String accessoryIds, Long categoryId, Long workerId, String operator, String ip) {
         OperationLog log = new OperationLog();
         log.setActionType(actionType);
         log.setContent(content);
-        log.setRelatedBarcode(barcode);
+        log.setAccessoryId(accessoryId);
+        log.setAccessoryIds(accessoryIds);
+        log.setRelatedCategoryId(categoryId);
         log.setRelatedWorkerId(workerId);
         log.setOperator(operator);
         log.setIp(ip);
@@ -33,34 +37,15 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
     }
 
     @Override
-    public PageResult<OperationLog> listPage(String actionType, String operator, String barcode,
+    public PageResult<OperationLogVO> listPage(String actionType, String operator, String barcode,
                                               String startDate, String endDate,
                                               String sortFields, String sortOrders,
                                               Integer pageNum, Integer pageSize) {
-        LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(actionType)) {
-            wrapper.eq(OperationLog::getActionType, actionType);
-        }
-        if (StringUtils.hasText(operator)) {
-            wrapper.like(OperationLog::getOperator, operator);
-        }
-        if (StringUtils.hasText(barcode)) {
-            wrapper.like(OperationLog::getRelatedBarcode, barcode);
-        }
-        if (StringUtils.hasText(startDate)) {
-            wrapper.ge(OperationLog::getCreateTime, startDate + " 00:00:00");
-        }
-        if (StringUtils.hasText(endDate)) {
-            wrapper.le(OperationLog::getCreateTime, endDate + " 23:59:59");
-        }
-        Map<String, SFunction<OperationLog, ?>> sortMapper = new HashMap<>();
-        sortMapper.put("actionType", OperationLog::getActionType);
-        sortMapper.put("content", OperationLog::getContent);
-        sortMapper.put("relatedBarcode", OperationLog::getRelatedBarcode);
-        sortMapper.put("operator", OperationLog::getOperator);
-        sortMapper.put("createTime", OperationLog::getCreateTime);
-        SortUtils.applyMultiSort(wrapper, sortFields, sortOrders, sortMapper, OperationLog::getCreateTime, false);
-        Page<OperationLog> page = page(new Page<>(pageNum, pageSize), wrapper);
-        return new PageResult<>(page.getRecords(), page.getTotal(), pageNum, pageSize);
+        List<OperationLogVO> all = baseMapper.selectLogWithJoin(actionType, operator, barcode, startDate, endDate);
+        int total = all.size();
+        int from = Math.max(0, (pageNum - 1) * pageSize);
+        int to = Math.min(from + pageSize, total);
+        List<OperationLogVO> pageData = from < total ? all.subList(from, to) : List.of();
+        return new PageResult<>(pageData, (long) total, pageNum, pageSize);
     }
 }

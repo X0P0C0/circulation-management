@@ -36,6 +36,16 @@ public class AccessoryController {
         return Result.ok(accessoryService.findById(id));
     }
 
+    @PostMapping("/batch")
+    public Result<List<AccessoryVO>> getByIds(@RequestBody List<Long> ids) {
+        return Result.ok(accessoryService.findByIds(ids));
+    }
+
+    @PostMapping("/batch-by-code")
+    public Result<List<AccessoryVO>> getByItemCodes(@RequestBody List<String> itemCodes) {
+        return Result.ok(accessoryService.findByItemCodes(itemCodes));
+    }
+
     @PostMapping("/import")
     public Result<List<AccessoryVO>> importCsv(@RequestParam("file") MultipartFile file,
                                                 @RequestParam(required = false) Long categoryId,
@@ -54,6 +64,7 @@ public class AccessoryController {
     public Result<PageResult<AccessoryVO>> search(
             @RequestParam(required = false) String barcode,
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String exactBarcode,
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) Integer statusNot,
             @RequestParam(required = false) Long workerId,
@@ -68,7 +79,7 @@ public class AccessoryController {
             @RequestParam(required = false) String sortOrders,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize) {
-        return Result.ok(accessoryService.search(barcode, categoryId, status, statusNot, workerId,
+        return Result.ok(accessoryService.search(barcode, exactBarcode, categoryId, status, statusNot, workerId,
                 keyword, operator, remark, highValue, shelfId, startDate, endDate, sortFields, sortOrders, pageNum, pageSize));
     }
 
@@ -96,11 +107,11 @@ public class AccessoryController {
         return Result.ok(accessoryService.importFromExcel(file, operator));
     }
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
-        accessoryService.deleteById(id);
+    public Result<Void> delete(@PathVariable Long id, HttpServletRequest request) {
+        String operator = (String) request.getAttribute(Constants.USERNAME_ATTR);
+        accessoryService.deleteById(id, operator);
         return Result.ok();
     }
-
     @PutMapping
     public Result<AccessoryVO> update(@Valid @RequestBody AccessoryUpdateDTO dto,
                                        HttpServletRequest request) {

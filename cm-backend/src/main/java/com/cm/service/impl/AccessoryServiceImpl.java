@@ -8,6 +8,9 @@ import com.cm.common.result.PageResult;
 import com.cm.dto.AccessoryInboundDTO;
 import com.cm.dto.AccessoryUpdateDTO;
 import com.cm.entity.Accessory;
+import com.cm.entity.FlowRecord;
+import com.cm.enums.FlowTypeEnum;
+import com.cm.mapper.FlowRecordMapper;
 import com.cm.entity.Category;
 import com.cm.entity.Worker;
 import com.cm.enums.AccessoryStatusEnum;
@@ -16,6 +19,7 @@ import com.cm.mapper.CategoryMapper;
 import com.cm.mapper.ShelfMapper;
 import com.cm.mapper.WorkerMapper;
 import com.cm.service.AccessoryService;
+import com.cm.service.OperationLogService;
 import com.cm.vo.AccessoryVO;
 import com.cm.vo.InventoryGroupVO;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +46,8 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
     private final CategoryMapper categoryMapper;
     private final WorkerMapper workerMapper;
     private final ShelfMapper shelfMapper;
+    private final OperationLogService operationLogService;
+    private final FlowRecordMapper flowRecordMapper;
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     @Override
@@ -60,17 +66,44 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
             acc.setOperator(operator);
             acc.setVersion(0);
             save(acc);
+            // 创建入库流转记录
+            FlowRecord fr = new FlowRecord();
+            fr.setAccessoryId(acc.getId());
+            fr.setItemCode(acc.getItemCode());
+            fr.setBarcode(acc.getBarcode() != null ? acc.getBarcode() : "");
+            fr.setFlowType(FlowTypeEnum.INBOUND.getCode());
+            fr.setOperator(operator);
+            flowRecordMapper.insert(fr);
             result.add(toVO(acc));
+        }
+        if (!result.isEmpty()) {
+            List<Long> inIds = result.stream().map(AccessoryVO::getId).collect(Collectors.toList());
+            operationLogService.log("INBOUND", "入库 " + result.size() + " 个工件", null, inIds.toString(), dto.getCategoryId(), null, operator, null);
         }
         return result;
     }
     @Override
-    public void deleteById(Long id) {
+    public void deleteById(Long id, String operator) {
         Accessory acc = getById(id);
         if (acc == null) {
             throw new BusinessException(404, "工件不存在");
         }
-        removeById(id);
+        if (acc.getStatus() != AccessoryStatusEnum.IN_STOCK.getCode()) {
+            throw new BusinessException(400, "只有在库工件才能删除");
+        }
+        String delBarcode = acc.getBarcode();
+        // 创建删除流转记录
+        FlowRecord fr = new FlowRecord();
+        fr.setAccessoryId(acc.getId());
+        fr.setItemCode(acc.getItemCode());
+        fr.setBarcode(delBarcode != null ? delBarcode : "");
+        fr.setFlowType(FlowTypeEnum.DELETE.getCode());
+        fr.setOperator(operator);
+        flowRecordMapper.insert(fr);
+        // 记录操作日志
+        operationLogService.log("DELETE", "删除工件", acc.getId(), null, acc.getCategoryId(), null, operator, null);
+        acc.setDeleted(1);
+        updateById(acc);
     }
 
     @Override
@@ -85,6 +118,7 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
         if (dto.getIsHighValue() != null) acc.setIsHighValue(dto.getIsHighValue());
         if (dto.getShelfId() != null) acc.setShelfId(dto.getShelfId());
         updateById(acc);
+        operationLogService.log("UPDATE", "编辑工件", acc.getId(), null, acc.getCategoryId(), null, operator, null);
         return toVO(acc);
     }
 
@@ -96,9 +130,24 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
     }
 
     @Override
+    public List<AccessoryVO> findByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Collections.emptyList();
+        List<Accessory> list = listByIds(ids);
+        return toVOList(list);
+    }
+
+    @Override
+    public List<AccessoryVO> findByItemCodes(List<String> itemCodes) {
+        if (itemCodes == null || itemCodes.isEmpty()) return Collections.emptyList();
+        List<Accessory> list = list(new LambdaQueryWrapper<Accessory>().in(Accessory::getItemCode, itemCodes));
+        return toVOList(list);
+    }
+
+    @Override
     public AccessoryVO findByBarcode(String barcode) {
         Accessory acc = getOne(new LambdaQueryWrapper<Accessory>()
                 .eq(Accessory::getBarcode, barcode)
+                .eq(Accessory::getDeleted, 0)
                 .eq(Accessory::getStatus, AccessoryStatusEnum.IN_STOCK.getCode())
                 .last("LIMIT 1"));
         if (acc == null) throw new BusinessException(404, "未找到该条码的在库工件");
@@ -106,14 +155,16 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
     }
 
     @Override
-    public PageResult<AccessoryVO> search(String barcode, Long categoryId, Integer status, Integer statusNot,
+    public PageResult<AccessoryVO> search(String barcode, String exactBarcode, Long categoryId, Integer status, Integer statusNot,
                                             Long workerId, String keyword,
                                             String operator, String remark, Integer highValue, Long shelfId,
                                             String startDate, String endDate,
                                             String sortFields, String sortOrders,
                                             Integer pageNum, Integer pageSize) {
         LambdaQueryWrapper<Accessory> wrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(barcode)) wrapper.like(Accessory::getBarcode, barcode);
+        wrapper.eq(Accessory::getDeleted, 0);
+        if (StringUtils.hasText(exactBarcode)) wrapper.eq(Accessory::getBarcode, exactBarcode);
+        else if (StringUtils.hasText(barcode)) wrapper.like(Accessory::getBarcode, barcode);
         if (categoryId != null) wrapper.eq(Accessory::getCategoryId, categoryId);
         if (status != null) wrapper.eq(Accessory::getStatus, status);
         if (statusNot != null) wrapper.ne(Accessory::getStatus, statusNot);
@@ -372,10 +423,18 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
             Category cat = acc.getCategoryId() != null ? catMap.get(acc.getCategoryId()) : null;
             vo.setCategoryName(cat != null ? cat.getName() : null);
             vo.setPartNumber(cat != null ? cat.getPartNumber() : null);
+            if (cat != null && cat.getParentId() != null && cat.getParentId() != 0) {
+                Category parent = catMap.get(cat.getParentId());
+                vo.setParentCategoryName(parent != null ? parent.getName() : null);
+            }
         } else {
             Category cat = acc.getCategoryId() != null ? categoryMapper.selectById(acc.getCategoryId()) : null;
             vo.setCategoryName(cat != null ? cat.getName() : null);
             vo.setPartNumber(cat != null ? cat.getPartNumber() : null);
+            if (cat != null && cat.getParentId() != null && cat.getParentId() != 0) {
+                Category parent = categoryMapper.selectById(cat.getParentId());
+                vo.setParentCategoryName(parent != null ? parent.getName() : null);
+            }
         }
         if (shelfMap != null) {
             com.cm.entity.Shelf shelf = acc.getShelfId() != null ? shelfMap.get(acc.getShelfId()) : null;
@@ -402,8 +461,13 @@ public class AccessoryServiceImpl extends ServiceImpl<AccessoryMapper, Accessory
         Set<Long> shelfIds = list.stream().map(Accessory::getShelfId).filter(Objects::nonNull).collect(Collectors.toSet());
         Set<Long> workerIds = list.stream().map(Accessory::getWorkerId).filter(Objects::nonNull).collect(Collectors.toSet());
 
-        Map<Long, Category> catMap = catIds.isEmpty() ? Collections.emptyMap()
-                : categoryMapper.selectBatchIds(catIds).stream().collect(Collectors.toMap(Category::getId, c -> c));
+        // Load categories and their parents
+        List<Category> cats = catIds.isEmpty() ? Collections.emptyList() : categoryMapper.selectBatchIds(catIds);
+        Set<Long> parentIds = cats.stream().map(Category::getParentId).filter(pid -> pid != null && pid != 0).collect(Collectors.toSet());
+        List<Category> parents = parentIds.isEmpty() ? Collections.emptyList() : categoryMapper.selectBatchIds(parentIds);
+        Map<Long, Category> catMap = new HashMap<>();
+        cats.forEach(c -> catMap.put(c.getId(), c));
+        parents.forEach(p -> catMap.put(p.getId(), p));
         Map<Long, com.cm.entity.Shelf> shelfMap = shelfIds.isEmpty() ? Collections.emptyMap()
                 : shelfMapper.selectBatchIds(shelfIds).stream().collect(Collectors.toMap(com.cm.entity.Shelf::getId, s -> s));
         Map<Long, Worker> workerMap = workerIds.isEmpty() ? Collections.emptyMap()

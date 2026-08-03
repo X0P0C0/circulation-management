@@ -10,6 +10,7 @@ public class AccessoryVO {
     private String itemCode;
     private Long categoryId;
     private String categoryName;
+    private String parentCategoryName;
     private String partNumber;
     private String remark;
     private Integer status;

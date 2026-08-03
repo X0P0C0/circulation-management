@@ -1,13 +1,10 @@
-package com.cm.entity;
+package com.cm.vo;
 
-import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("operation_log")
-public class OperationLog {
-    @TableId(type = IdType.AUTO)
+public class OperationLogVO {
     private Long id;
     private String actionType;
     private String content;
@@ -18,4 +15,11 @@ public class OperationLog {
     private String operator;
     private String ip;
     private LocalDateTime createTime;
+    // JOIN fields
+    private String barcode;
+    private String itemCode;
+    private String categoryName;
+    private String parentCategoryName;
+    private String partNumber;
+    private String workerName;
 }

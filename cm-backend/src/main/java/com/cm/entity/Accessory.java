@@ -34,4 +34,6 @@ public class Accessory {
     private LocalDateTime createTime;
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
+    /** 0=正常 1=已删除（软删除） */
+    private Integer deleted;
 }

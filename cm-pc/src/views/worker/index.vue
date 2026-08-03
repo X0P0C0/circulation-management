@@ -56,11 +56,11 @@
       <template #header>
         <div style="display:flex;align-items:center;gap:12px">
           <span style="font-size:16px;font-weight:600">{{ drawerTitle }}</span>
-          <el-radio-group v-model="inventoryView" size="small">
+          <el-radio-group v-model="inventoryView" size="small" @change="inventoryFilter = null">
             <el-radio-button value="detail">明细</el-radio-button>
             <el-radio-button value="summary">汇总</el-radio-button>
           </el-radio-group>
-          <el-button v-if="inventoryFilter" size="small" @click="inventoryFilter = null">返回汇总</el-button>
+          <el-button v-if="inventoryFilter" size="small" @click="inventoryFilter = null; inventoryView = 'summary'">返回汇总</el-button>
         </div>
       </template>
       <el-table v-if="inventoryView === 'summary' && !inventoryFilter" :data="inventoryGrouped" stripe border empty-text="暂无配件"

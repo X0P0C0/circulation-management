@@ -17,6 +17,7 @@ import com.cm.mapper.FlowRecordMapper;
 import com.cm.mapper.WorkerMapper;
 import com.cm.service.FlowService;
 import com.cm.service.OperationLogService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.cm.vo.FlowTraceVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -61,7 +62,7 @@ public class FlowServiceImpl implements FlowService {
         }
 
         operationLogService.log("OUTBOUND", "出库 " + dto.getAccessoryIds().size() + " 个工件给 " + worker.getName(),
-                null, dto.getWorkerId(), operator, null);
+                null, toJsonArray(dto.getAccessoryIds()), null, dto.getWorkerId(), operator, null);
     }
 
     @Override
@@ -112,7 +113,7 @@ public class FlowServiceImpl implements FlowService {
         }
 
         operationLogService.log("RETURN", "归还 " + dto.getAccessoryIds().size() + " 个工件",
-                null, null, operator, null);
+                null, toJsonArray(dto.getAccessoryIds()), null, null, operator, null);
     }
 
     @Override
@@ -137,7 +138,7 @@ public class FlowServiceImpl implements FlowService {
 
         String customerInfo = StringUtils.hasText(dto.getCustomerName()) ? " → " + dto.getCustomerName() : "";
         operationLogService.log("SELL", "售卖 " + dto.getItems().size() + " 个工件" + customerInfo,
-                null, null, operator, null);
+                null, toJsonArray(dto.getItems().stream().map(i -> i.getAccessoryId()).collect(java.util.stream.Collectors.toList())), null, null, operator, null);
     }
 
     @Override
@@ -165,7 +166,7 @@ public class FlowServiceImpl implements FlowService {
         }
 
         operationLogService.log("TRANSFER", "转移 " + dto.getAccessoryIds().size() + " 个工件：" +
-                fromWorker.getName() + " → " + toWorker.getName(), null, null, operator, null);
+                fromWorker.getName() + " → " + toWorker.getName(), null, toJsonArray(dto.getAccessoryIds()), null, null, operator, null);
     }
 
     @Override
@@ -178,14 +179,20 @@ public class FlowServiceImpl implements FlowService {
         vo.setItemCode(itemCode);
         vo.setBarcode(acc.getBarcode());
         vo.setCategoryId(acc.getCategoryId());
-        vo.setCurrentStatus(acc.getStatus());
-        vo.setCurrentStatusDesc(AccessoryStatusEnum.of(acc.getStatus()).getDesc());
-
-        if (acc.getWorkerId() != null) {
-            Worker w = workerMapper.selectById(acc.getWorkerId());
-            vo.setCurrentHolder(w != null ? w.getName() + "（师傅）" : "未知师傅");
+        if (acc.getDeleted() != null && acc.getDeleted() == 1) {
+            vo.setCurrentStatus(-1);
+            vo.setCurrentStatusDesc("已删除");
+            vo.setCurrentHolder("已删除");
+            vo.setDeleted(1);
         } else {
-            vo.setCurrentHolder(AccessoryStatusEnum.of(acc.getStatus()).getDesc());
+            vo.setCurrentStatus(acc.getStatus());
+            vo.setCurrentStatusDesc(AccessoryStatusEnum.of(acc.getStatus()).getDesc());
+            if (acc.getWorkerId() != null) {
+                Worker w = workerMapper.selectById(acc.getWorkerId());
+                vo.setCurrentHolder(w != null ? w.getName() + "（师傅）" : "未知师傅");
+            } else {
+                vo.setCurrentHolder(AccessoryStatusEnum.of(acc.getStatus()).getDesc());
+            }
         }
 
         if (acc.getCategoryId() != null) {
@@ -263,5 +270,10 @@ public class FlowServiceImpl implements FlowService {
         record.setRemark(remark);
         record.setOperator(operator);
         flowRecordMapper.insert(record);
+    }
+
+    private String toJsonArray(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return null;
+        return ids.toString();
     }
 }

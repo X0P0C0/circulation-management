@@ -39,7 +39,8 @@ public interface AccessoryMapper extends BaseMapper<Accessory> {
             sb.append("CAST(SUM(CASE WHEN a.status = 1 THEN 1 ELSE 0 END) AS SIGNED) AS availableCount ");
             sb.append("FROM accessory a LEFT JOIN category c ON a.category_id = c.id ");
             sb.append("WHERE 1=1 ");
-            if (barcode != null && !barcode.isEmpty()) sb.append("AND a.barcode LIKE CONCAT('%', #{barcode}, '%') ");
+            sb.append("AND a.deleted = 0 ");
+            if (barcode != null && !barcode.isEmpty()) sb.append("AND (a.barcode LIKE CONCAT('%', #{barcode}, '%') OR a.item_code LIKE CONCAT('%', #{barcode}, '%')) ");
             if (categoryId != null) sb.append("AND a.category_id = #{categoryId} ");
             if (statusFilter != null) sb.append("AND a.status = #{statusFilter} ");
             if (workerId != null) sb.append("AND a.worker_id = #{workerId} ");

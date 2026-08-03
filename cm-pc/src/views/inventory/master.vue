@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <div class="page-header">
-      <h2 class="page-title" style="cursor:pointer" @click="backToSummary">总库{{ filters.barcode ? " - " + filters.barcode : "（全部工件）" }}</h2>
+      <h2 class="page-title" style="cursor:pointer" @click="backToSummary">总库{{ (filters.exactBarcode || filters.barcode) ? " - " + (filters.exactBarcode || filters.barcode) : "（全部工件）" }}</h2>
       <div class="header-actions">
         <el-button v-if="!showGrouped" size="small" @click="backToSummary">&larr; 返回汇总</el-button>
         <el-radio-group v-model="showGrouped" size="small" @change="loadData">
@@ -94,7 +94,7 @@
         </el-table-column>
       </el-table>
 
-      <el-table v-else :data="filteredList" stripe border v-loading="loading" style="width:100%" @row-click="onItemClick" highlight-current-row :row-style="{ cursor: 'pointer' }">
+      <el-table v-else :data="filteredList" stripe border v-loading="loading" style="width:100%" @row-click="onItemClick" highlight-current-row :row-style="{ cursor: 'pointer' }" @selection-change="onSelectionChange">
         <el-table-column v-if="deleteMode" type="selection" width="50" align="center" />
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column prop="itemCode" label="工件编号" width="124" sortable />
@@ -224,7 +224,7 @@ const shelfList = ref([])
 const dateRange = ref(null)
 
 const filters = reactive({
-  barcode: '', itemCode: '', owner: '', categoryId: null, shelfId: null,
+  barcode: '', exactBarcode: '', itemCode: '', owner: '', categoryId: null, shelfId: null,
   status: null, highValue: null, remark: '', operator: ''
 })
 
@@ -240,10 +240,10 @@ const resetFilters = () => {
 const handleDateChange = () => { pageNum.value = 1; loadData() }
 const handlePageSizeChange = () => { const v = Number(pageSizeInput.value); if (v && v > 0) { pageSize.value = v; pageNum.value = 1; loadData() } }
 
-const backToSummary = () => { filters.barcode = ''; filters.categoryId = null; filters.itemCode = ''; showGrouped.value = true; pageNum.value = 1; loadData() }
+const backToSummary = () => { filters.barcode = ''; filters.exactBarcode = ''; filters.categoryId = null; filters.itemCode = ''; showGrouped.value = true; pageNum.value = 1; loadData() }
 
 const onGroupRowClick = (row) => {
-  filters.barcode = row.barcode || ''
+  filters.exactBarcode = row.barcode || ''
   filters.categoryId = row.categoryId
   showGrouped.value = false
   pageNum.value = 1
@@ -256,7 +256,7 @@ const loadData = async () => {
   loading.value = true
   try {
     const baseParams = { pageNum: pageNum.value, pageSize: pageSize.value }
-    if (filters.barcode) baseParams.barcode = filters.barcode
+    if (filters.exactBarcode) { baseParams.exactBarcode = filters.exactBarcode } else if (filters.barcode) { baseParams.barcode = filters.barcode }
     if (filters.categoryId) baseParams.categoryId = filters.categoryId
     if (filters.remark) baseParams.remark = filters.remark
     if (filters.highValue !== null && filters.highValue !== '') baseParams.highValue = filters.highValue
@@ -297,15 +297,15 @@ const loadData = async () => {
 // Delete mode
 const deleteMode = ref(false)
 const deleteLoading = ref(false)
-const toggleDeleteMode = () => { deleteMode.value = !deleteMode.value }
+const selectedItems = ref([])
+const onSelectionChange = (rows) => { selectedItems.value = rows }
+const toggleDeleteMode = () => { deleteMode.value = !deleteMode.value; if (!deleteMode.value) selectedItems.value = [] }
 const handleBatchDelete = async () => {
-  const table = document.querySelector('.el-table')
-  const selection = table?.__vueParentComponent?.setupState?.selectedItems || []
-  if (selection.length === 0) { ElMessage.warning('请选择要删除的工件'); return }
-  await ElMessageBox.confirm('确定删除选中的 ' + selection.length + ' 个工件？此操作不可恢复。', '确认删除', { type: 'warning' })
+  if (selectedItems.value.length === 0) { ElMessage.warning('请选择要删除的工件'); return }
+  await ElMessageBox.confirm('确定删除选中的 ' + selectedItems.value.length + ' 个工件？此操作不可恢复。', '确认删除', { type: 'warning' })
   deleteLoading.value = true
   try {
-    for (const item of selection) { await deleteAccessory(item.id) }
+    for (const item of selectedItems.value) { await deleteAccessory(item.id) }
     ElMessage.success('批量删除成功'); deleteMode.value = false; loadData()
   } catch (e) { console.error(e) } finally { deleteLoading.value = false }
 }
