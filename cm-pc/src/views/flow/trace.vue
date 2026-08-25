@@ -59,6 +59,7 @@
         </el-timeline>
         <el-empty v-if="!traceData.steps?.length" description="暂无流转记录" />
       </div>
+      <el-empty v-if="searched && !traceData && !loading" description="未找到相关工件" />
     </el-card>
   </div>
 </template>
@@ -74,6 +75,7 @@ const searchType = ref('itemCode')
 const searchKeyword = ref('')
 const traceData = ref(null)
 const loading = ref(false)
+const searched = ref(false)
 const multiItems = ref([])
 const activeIndex = ref(0)
 const itemDetails = ref({})
@@ -86,9 +88,27 @@ const handleTrace = async () => {
   if (!searchKeyword.value.trim()) return
   loading.value = true
   try {
-    const fn = searchType.value === 'barcode' ? traceByBarcode : traceItem
-    const { data } = await fn(searchKeyword.value.trim())
-    traceData.value = data
+    if (searchType.value === 'barcode') {
+      // 条码 = 分类专用号，可能对应多个工件，全部展示为可切换的 tab
+      const { data } = await traceByBarcode(searchKeyword.value.trim())
+      const codes = (data || []).map(i => i.itemCode).filter(Boolean)
+      searched.value = true
+      if (!codes.length) {
+        multiItems.value = []
+        traceData.value = null
+        return
+      }
+      multiItems.value = codes
+      activeIndex.value = 0
+      itemDetails.value = {}
+      await loadItemDetails()
+      const { data: d } = await traceItem(codes[0])
+      traceData.value = d
+    } else {
+      const { data } = await traceItem(searchKeyword.value.trim())
+      searched.value = true
+      traceData.value = data
+    }
   } catch (e) { traceData.value = null } finally { loading.value = false }
 }
 
@@ -143,6 +163,7 @@ loadItemDetails()
 
 const switchItem = (idx) => {
   activeIndex.value = idx
+  searchType.value = 'itemCode'
   searchKeyword.value = multiItems.value[idx]
   handleTrace()
 }

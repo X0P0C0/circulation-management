@@ -7,6 +7,7 @@ import com.cm.dto.*;
 import com.cm.service.FlowService;
 import com.cm.vo.FlowTraceVO;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -56,7 +57,7 @@ public class FlowController {
     }
 
     @GetMapping("/trace")
-    public Result<FlowTraceVO> traceByBarcode(@RequestParam String barcode) {
+    public Result<List<FlowTraceVO>> traceByBarcode(@RequestParam String barcode) {
         return Result.ok(flowService.traceByBarcode(barcode));
     }
 

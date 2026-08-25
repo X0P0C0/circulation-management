@@ -174,7 +174,23 @@ public class FlowServiceImpl implements FlowService {
         Accessory acc = accessoryMapper.selectOne(
                 new LambdaQueryWrapper<Accessory>().eq(Accessory::getItemCode, itemCode));
         if (acc == null) throw new BusinessException(404, "工件编号不存在");
+        return buildTrace(acc);
+    }
 
+    @Override
+    public List<FlowTraceVO> traceByBarcode(String barcode) {
+        // 条码 = 分类专用号，同分类的多个工件共用同一条码，不是唯一键，
+        // 因此返回该条码对应的全部工件追溯记录，由前端展示多个并切换查看
+        List<Accessory> list = accessoryMapper.selectList(
+                new LambdaQueryWrapper<Accessory>()
+                        .eq(Accessory::getBarcode, barcode)
+                        .orderByAsc(Accessory::getDeleted)
+                        .orderByDesc(Accessory::getId));
+        return list.stream().map(this::buildTrace).collect(Collectors.toList());
+    }
+
+    private FlowTraceVO buildTrace(Accessory acc) {
+        String itemCode = acc.getItemCode();
         FlowTraceVO vo = new FlowTraceVO();
         vo.setItemCode(itemCode);
         vo.setBarcode(acc.getBarcode());
@@ -221,19 +237,6 @@ public class FlowServiceImpl implements FlowService {
         }).collect(Collectors.toList()));
 
         return vo;
-    }
-
-    @Override
-    public FlowTraceVO traceByBarcode(String barcode) {
-        // 条码 = 分类专用号，同分类的多个工件共用同一条码，不是唯一键，
-        // 这里查出所有匹配项，优先返回“未删除 + 最新”的一条，避免 selectOne 抛异常
-        List<Accessory> list = accessoryMapper.selectList(
-                new LambdaQueryWrapper<Accessory>()
-                        .eq(Accessory::getBarcode, barcode)
-                        .orderByAsc(Accessory::getDeleted)
-                        .orderByDesc(Accessory::getId));
-        if (list.isEmpty()) throw new BusinessException(404, "条码不存在");
-        return trace(list.get(0).getItemCode());
     }
 
     @Override
