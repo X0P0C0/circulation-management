@@ -36,7 +36,7 @@
       </el-menu>
       <div class="sidebar-footer">
         <el-icon :size="14"><InfoFilled /></el-icon>
-        <span v-show="!isCollapsed">v1.0.29</span>
+        <span v-show="!isCollapsed">v1.0.30</span>
       </div>
     </aside>
 
